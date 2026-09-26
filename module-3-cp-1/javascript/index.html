@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DOM Playground — JavaScript Exercise</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <header class="site-header">
+        <span id="clock" class="badge" aria-live="polite">
+            <span class="badge-dot" aria-hidden="true"></span>
+            <span id="clock-time">--:--:--</span>
+        </span>
+    </header>
+
+    <main class="layout">
+        <section class="card" aria-labelledby="counter-heading">
+            <h2 id="counter-heading" class="section-title">1. Select &amp; Update</h2>
+            <p class="section-desc">Select an element by ID and update its text and classes at runtime.</p>
+
+            <p class="counter-display">
+                Count: <output id="count-value">0</output>
+            </p>
+
+            <div class="btn-row">
+                <button type="button" id="decrement" class="btn btn-ghost">− Decrement</button>
+                <button type="button" id="reset" class="btn btn-ghost">Reset</button>
+                <button type="button" id="increment" class="btn btn-solid">+ Increment</button>
+            </div>
+            <p id="count-hint" class="hint">The number turns red when negative and green when positive.</p>
+        </section>
+
+        <section class="card" aria-labelledby="toggle-heading">
+            <h2 id="toggle-heading" class="section-title">2. Toggle Classes</h2>
+            <p class="section-desc">Add and remove CSS classes at runtime to change an element's appearance.</p>
+
+            <div id="toggle-box" class="toggle-box">
+                <p>Watch me change.</p>
+            </div>
+
+            <div class="btn-row">
+                <button type="button" id="toggle-highlight" class="btn btn-solid">Toggle Highlight</button>
+                <button type="button" id="toggle-dark" class="btn btn-ghost">Toggle Dark</button>
+                <button type="button" id="toggle-round" class="btn btn-ghost">Toggle Rounded</button>
+            </div>
+        </section>
+
+        <section class="card" aria-labelledby="list-heading">
+            <h2 id="list-heading" class="section-title">3. Create &amp; Remove</h2>
+            <p class="section-desc">Build a task list by creating and removing DOM nodes.</p>
+
+            <form id="task-form" class="task-form">
+                <input type="text" id="task-input" placeholder="Add a task and press Enter" autocomplete="off" />
+                <button type="submit" class="btn btn-solid">Add</button>
+            </form>
+
+            <ul id="task-list" class="task-list" aria-live="polite"></ul>
+            <p id="task-empty" class="hint">No tasks yet. Add one above.</p>
+        </section>
+
+        <section class="card" aria-labelledby="event-heading">
+            <h2 id="event-heading" class="section-title">4. Event Handling</h2>
+            <p class="section-desc">Respond to input, mouse, and keyboard events.</p>
+
+            <div class="form-group">
+                <label for="live-input">Type something</label>
+                <input type="text" id="live-input" placeholder="Live preview below..." />
+            </div>
+            <p class="live-preview">You typed: <strong id="live-output">nothing yet</strong>
+                (<span id="char-count">0</span> chars)</p>
+
+            <div id="hover-pad" class="hover-pad" tabindex="0">
+                Hover, click, or focus me. Press any key while focused.
+            </div>
+            <p class="hint">Last event: <strong id="event-log">none</strong></p>
+        </section>
+    </main>
+
+    <footer>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
