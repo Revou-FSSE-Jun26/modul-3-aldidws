@@ -9,6 +9,12 @@ const PRODUCTS = [
   { id: 8, name: "Karpet Dasar Mobil", image: "../image/Product-id-8.jpeg", category: "interior", price: 350000, rating: 4.1, inStock: true },
   { id: 9, name: "Shell Radiator Coolant LongLife Plus 4L", image: "../image/Product-id-9.jpeg", category: "engine", price: 60000, rating: 4.4, inStock: true },
   { id: 10, name: "BBS Tutup Dop Velg", image: "../image/Product-id-10.jpg", category: "wheels", price: 110000, rating: 3.9, inStock: true },
+  { id: 11, name: "Spoiler GT Wing Performance BMW G30 G20 G80 M3 M4 G82", category: "accessories", price: 3200000, rating: 4.5, inStock: true },
+  { id: 12, name: "Kipas Radiator Fan Belt BMW E36 E34 E39 E46 M50 M52 M54", category: "engine", price: 295000, rating: 4.4, inStock: true },
+  { id: 13, name: "Velg Original BMW Style 32 R17", category: "wheels", price: 17475000, rating: 4.8, inStock: true },
+  { id: 14, name: "G80 M3 Smoked OLED Tail Light with LED Sequential Indicator", category: "accessories", price: 6960000, rating: 4.5, inStock: true },
+  { id: 15, name: "Shell Helix HX6 10W-40 4L ", category: "engine", price: 270000, rating: 4.8, inStock: true },
+  { id: 16, name: "Velg BMW seri 3 E46 ", category: "wheels", price: 16500000, rating: 4.8, inStock: true },
 ];
 
 const TAX_RATE = 0.08;

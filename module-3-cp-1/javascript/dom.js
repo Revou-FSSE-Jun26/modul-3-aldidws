@@ -229,8 +229,8 @@ function changeQty(productId, delta) {
   renderCart();
 }
 
-searchInput.addEventListener("input", (e) => {
-  searchTerm = e.target.value;
+searchInput.addEventListener("input", () => {
+  searchTerm = searchInput.value;
   renderGrid();
 });
 
@@ -243,7 +243,7 @@ categoryFilters.addEventListener("click", (e) => {
   const chip = e.target.closest("button.chip");
   if (!chip) return;
   activeCategory = chip.dataset.category;
-  renderCategoryChips(); // refresh active class
+  renderCategoryChips();
   renderGrid();
 });
 

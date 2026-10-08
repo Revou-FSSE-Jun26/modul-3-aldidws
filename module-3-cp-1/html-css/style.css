@@ -50,40 +50,6 @@ textarea:focus-visible {
     margin: 0 auto;
 }
 
-.brand {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    font-weight: 600;
-}
-
-.brand-mark {
-    display: grid;
-    place-items: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    background: var(--indigo);
-    color: #fff;
-    font-weight: 700;
-    font-size: 0.85rem;
-}
-
-.site-nav {
-    display: flex;
-    gap: 1.5rem;
-}
-
-.site-nav a {
-    color: var(--gray-600);
-    font-weight: 500;
-    transition: color 0.15s ease;
-}
-
-.site-nav a:hover {
-    color: var(--indigo);
-}
-
 .layout {
     max-width: 1200px;
     margin: 0 auto;
