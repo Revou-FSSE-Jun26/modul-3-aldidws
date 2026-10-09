@@ -1,5 +1,4 @@
-// Categories page — a Server Component that fetches categories from Flask.
-
+import Link from "next/link";
 import Card from "@/components/Card";
 import { getCategories } from "@/lib/api";
 
@@ -19,19 +18,29 @@ export default async function CategoriesPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {categories.map((category) => (
-            <Card key={category.id} className="flex flex-col gap-1">
-              <h2 className="text-base font-semibold">{category.name}</h2>
-              {category.description && (
-                <p className="text-sm text-foreground/60">
-                  {category.description}
-                </p>
-              )}
-              {typeof category.productCount === "number" && (
-                <span className="mt-1 text-xs text-foreground/50">
-                  {category.productCount} product
+            <Link
+              key={category.id}
+              href={`/products?category=${encodeURIComponent(category.name)}`}
+              aria-label={`View products in ${category.name}`}
+              className="rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-foreground/40"
+            >
+              <Card className="flex h-full flex-col gap-1">
+                <h2 className="text-base font-semibold">{category.name}</h2>
+                {category.description && (
+                  <p className="text-sm text-foreground/60">
+                    {category.description}
+                  </p>
+                )}
+                {typeof category.productCount === "number" && (
+                  <span className="mt-1 text-xs text-foreground/50">
+                    {category.productCount} product
+                  </span>
+                )}
+                <span className="mt-2 text-sm font-medium text-foreground/70">
+                  View products &rarr;
                 </span>
-              )}
-            </Card>
+              </Card>
+            </Link>
           ))}
         </div>
       )}
