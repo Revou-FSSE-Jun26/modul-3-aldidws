@@ -4,6 +4,7 @@ import "./globals.css";
 import { Suspense } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { CartProvider } from "@/lib/cart";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,17 +32,19 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <Suspense
-          fallback={
-            <div className="h-[65px] border-b border-black/10 dark:border-white/15" />
-          }
-        >
-          <Header />
-        </Suspense>
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
-          {children}
-        </main>
-        <Footer />
+        <CartProvider>
+          <Suspense
+            fallback={
+              <div className="h-[65px] border-b border-black/10 dark:border-white/15" />
+            }
+          >
+            <Header />
+          </Suspense>
+          <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8">
+            {children}
+          </main>
+          <Footer />
+        </CartProvider>
       </body>
     </html>
   );

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Card from "./Card";
+import { useCart } from "@/lib/cart";
 
 export interface ProductCardProps {
   id: number | string;
@@ -26,11 +27,19 @@ export default function ProductCard({
   const isOutOfStock = stock <= 0;
 
   const [quantity, setQuantity] = useState(1);
+  const [added, setAdded] = useState(false);
+  const { addItem } = useCart();
 
   const decrease = () => setQuantity((q) => Math.max(1, q - 1));
   const increase = () => setQuantity((q) => Math.min(stock, q + 1));
 
   const formattedPrice = `${currency} ${price.toLocaleString("id-ID")}`;
+
+  function handleAddToCart() {
+    addItem({ id, name, price }, quantity);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1500);
+  }
 
   return (
     <Card className="flex flex-col gap-3">
@@ -97,13 +106,20 @@ export default function ProductCard({
       <button
         type="button"
         disabled={isOutOfStock}
+        onClick={handleAddToCart}
         className={`mt-1 w-full rounded-md px-4 py-2 text-sm font-semibold transition-colors ${
           isOutOfStock
             ? "cursor-not-allowed bg-gray-300 text-gray-600 dark:bg-gray-700 dark:text-gray-400"
-            : "bg-foreground text-background hover:opacity-90"
+            : added
+              ? "bg-green-600 text-white"
+              : "bg-foreground text-background hover:opacity-90"
         }`}
       >
-        {isOutOfStock ? "Out of Stock" : `Add to Cart (${quantity})`}
+        {isOutOfStock
+          ? "Out of Stock"
+          : added
+            ? "Added \u2713"
+            : `Add to Cart (${quantity})`}
       </button>
     </Card>
   );
