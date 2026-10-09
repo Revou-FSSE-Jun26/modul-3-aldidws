@@ -4,7 +4,7 @@ import ProductCard from "@/components/ProductCard";
 
 export default async function Home() {
   const products = await getProducts();
-  const featured = products.slice(0, 3);
+  const featured = products.slice(0, 5);
 
   return (
     <div className="flex flex-col gap-8">
