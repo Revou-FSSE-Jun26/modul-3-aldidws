@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSyncExternalStore } from "react";
 import { useCart } from "@/lib/cart";
+import { useAuth } from "@/lib/useAuth";
 
 const emptySubscribe = () => () => {};
 
@@ -24,6 +25,7 @@ const NAV_LINKS = [
 export default function Header() {
   const pathname = usePathname();
   const { totalItems } = useCart();
+  const { isAdmin } = useAuth();
 
   const mounted = useMounted();
 
@@ -45,9 +47,9 @@ export default function Header() {
           <ul className="flex items-center gap-1">
             <li>
               <Link
-                href="/login"
-                aria-current={pathname.startsWith("/login") ? "page" : undefined}
-                className={linkClass(pathname.startsWith("/login"))}
+                href="/auth/login"
+                aria-current={pathname.startsWith("/auth/login") ? "page" : undefined}
+                className={linkClass(pathname.startsWith("/auth/login"))}
               >
                 Login
               </Link>
@@ -70,6 +72,19 @@ export default function Header() {
                 </li>
               );
             })}
+            {mounted && isAdmin && (
+              <li>
+                <Link
+                  href="/admin/dashboard"
+                  aria-current={
+                    pathname.startsWith("/admin/dashboard") ? "page" : undefined
+                  }
+                  className={linkClass(pathname.startsWith("/admin/dashboard"))}
+                >
+                  Dashboard
+                </Link>
+              </li>
+            )}
             <li>
               <Link
                 href="/cart"

@@ -4,10 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Card from "@/components/Card";
-import { AuthError, login } from "@/lib/auth";
+import { AuthError, register } from "@/lib/auth";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -16,10 +17,15 @@ export default function LoginPage() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    setLoading(true);
 
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+
+    setLoading(true);
     try {
-      const result = await login({ email, password });
+      const result = await register({ name, email, password });
       localStorage.setItem("token", result.token);
       localStorage.setItem("user", JSON.stringify(result.user));
       router.push(result.redirect ?? "/");
@@ -33,11 +39,24 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-sm flex-col gap-4">
-      <h1 className="text-xl font-bold">Login</h1>
+    <div className="flex w-full flex-col gap-4">
+      <h1 className="text-xl font-bold">Create Account</h1>
 
       <Card>
         <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <label htmlFor="name" className="text-sm font-medium">
+              Name
+            </label>
+            <input
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+              className="rounded-md border border-black/15 bg-background px-3 py-2 text-sm outline-none focus:border-foreground/40 dark:border-white/20"
+            />
+          </div>
+
           <div className="flex flex-col gap-1">
             <label htmlFor="email" className="text-sm font-medium">
               Email
@@ -62,8 +81,10 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              minLength={8}
               className="rounded-md border border-black/15 bg-background px-3 py-2 text-sm outline-none focus:border-foreground/40 dark:border-white/20"
             />
+            <p className="text-xs text-foreground/50">At least 8 characters.</p>
           </div>
 
           {error && (
@@ -77,15 +98,15 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full rounded-md bg-foreground px-4 py-2 text-sm font-semibold text-background hover:opacity-90 disabled:opacity-50"
           >
-            {loading ? "Processing..." : "Login"}
+            {loading ? "Processing..." : "Sign Up"}
           </button>
         </form>
       </Card>
 
       <p className="text-center text-sm text-foreground/60">
-        Don&apos;t have an account?{" "}
-        <Link href="/register" className="font-medium hover:underline">
-          Sign Up
+        Already have an account?{" "}
+        <Link href="/auth/login" className="font-medium hover:underline">
+          Login
         </Link>
       </p>
     </div>

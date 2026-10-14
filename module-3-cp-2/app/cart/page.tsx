@@ -99,6 +99,13 @@ export default function CartPage() {
               Total: Rp {totalPrice.toLocaleString("id-ID")}
             </span>
           </Card>
+
+          <Link
+            href="/checkout"
+            className="rounded-md bg-foreground px-4 py-3 text-center text-sm font-semibold text-background hover:opacity-90"
+          >
+            Proceed to checkout
+          </Link>
         </>
       )}
     </div>
