@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Card from "@/components/Card";
+import PasswordInput from "@/components/PasswordInput";
 import { AuthError, login } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +25,11 @@ export default function LoginPage() {
       const result = await login({ email, password });
       localStorage.setItem("token", result.token);
       localStorage.setItem("user", JSON.stringify(result.user));
-      router.push(result.redirect ?? "/");
+      if (result.user.role === "admin") {
+        router.push("/dashboard");
+      } else {
+        router.push(redirectTo ?? "/");
+      }
     } catch (err) {
       setError(
         err instanceof AuthError ? err.message : "An unexpected error occurred.",
@@ -56,13 +63,11 @@ export default function LoginPage() {
             <label htmlFor="password" className="text-sm font-medium">
               Password
             </label>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="rounded-md border border-black/15 bg-background px-3 py-2 text-sm outline-none focus:border-foreground/40 dark:border-white/20"
             />
           </div>
 

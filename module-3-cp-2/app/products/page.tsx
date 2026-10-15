@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { getCategories, getProducts } from "@/lib/api";
 import ProductCard from "@/components/ProductCard";
-import AddProductForm from "@/components/AddProductForm";
 
 export default async function ProductsPage({
   searchParams,
@@ -87,9 +86,6 @@ export default async function ProductsPage({
         </div>
       )}
 
-      <section className="mt-6 border-t border-black/10 pt-6 dark:border-white/15">
-        <AddProductForm />
-      </section>
     </div>
   );
 }

@@ -1,0 +1,102 @@
+"use client";
+
+import { useState } from "react";
+import Card from "./Card";
+import type { Product } from "@/lib/types";
+
+interface DeleteProductFormProps {
+  product: Product;
+  onDelete?: (product: Product) => void;
+  onCancel?: () => void;
+}
+
+export default function DeleteProductForm({
+  product,
+  onDelete,
+  onCancel,
+}: DeleteProductFormProps) {
+  const [confirming, setConfirming] = useState(false);
+  const [deleted, setDeleted] = useState(false);
+
+  const [currentId, setCurrentId] = useState(product.id);
+  if (product.id !== currentId) {
+    setCurrentId(product.id);
+    setConfirming(false);
+    setDeleted(false);
+  }
+
+  function handleRequestDelete() {
+    setConfirming(true);
+  }
+
+  function handleCancel() {
+    setConfirming(false);
+    onCancel?.();
+  }
+
+  function handleConfirmDelete() {
+    onDelete?.(product);
+    setConfirming(false);
+    setDeleted(true);
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <Card className="border-red-500/30">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-lg font-semibold text-red-600 dark:text-red-500">
+              Delete Product
+            </h2>
+            <p className="text-sm text-foreground/70">
+              Permanently remove{" "}
+              <span className="font-medium text-foreground">
+                {product.name}
+              </span>{" "}
+              from the catalog. This action cannot be undone.
+            </p>
+          </div>
+
+          {deleted ? (
+            <p className="text-xs text-green-600" aria-live="polite">
+              Product deleted.
+            </p>
+          ) : confirming ? (
+            <div className="flex flex-col gap-3">
+              <p
+                className="text-sm font-medium text-red-600 dark:text-red-500"
+                aria-live="polite"
+              >
+                Are you sure you want to delete this product?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={handleConfirmDelete}
+                  className="flex-1 rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+                >
+                  Yes, delete
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="rounded-md border border-black/15 px-4 py-2 text-sm font-semibold hover:bg-foreground/5 dark:border-white/20"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleRequestDelete}
+              className="w-full rounded-md border border-red-500/50 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-500/10 dark:text-red-500"
+            >
+              Delete Product
+            </button>
+          )}
+        </div>
+      </Card>
+    </div>
+  );
+}

@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Card from "@/components/Card";
 import { useCart } from "@/lib/cart";
 import { createOrder } from "@/lib/api";
-import type { Order } from "@/lib/types";
 
 interface FormValues {
   name: string;
@@ -49,12 +49,12 @@ function validate(values: FormValues): FormErrors {
 
 export default function CheckoutPage() {
   const { items, totalItems, totalPrice, clear } = useCart();
+  const router = useRouter();
 
   const [values, setValues] = useState<FormValues>(EMPTY_FORM);
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [placedOrder, setPlacedOrder] = useState<Order | null>(null);
 
   function handleChange(
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -80,7 +80,7 @@ export default function CheckoutPage() {
 
     setSubmitting(true);
     try {
-      const order = await createOrder({
+      await createOrder({
         customerName: values.name.trim(),
         email: values.email.trim(),
         address: values.address.trim(),
@@ -89,57 +89,17 @@ export default function CheckoutPage() {
           quantity: item.quantity,
         })),
       });
-      
-      setPlacedOrder(order);
+
       clear();
+      router.push("/orders");
     } catch (err) {
       setSubmitError(
         err instanceof Error
           ? err.message
           : "Could not place your order. Please try again.",
       );
-    } finally {
       setSubmitting(false);
     }
-  }
-
-  // --- Success screen ------------------------------------------------------
-  if (placedOrder) {
-    return (
-      <div className="flex flex-col gap-6">
-        <Card className="flex flex-col items-center gap-3 py-10 text-center">
-          <div
-            aria-hidden="true"
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-2xl text-green-600 dark:bg-green-900/40 dark:text-green-400"
-          >
-            &#10003;
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight">Order placed</h1>
-          <p className="text-foreground/60">
-            Thank you, {placedOrder.customerName}. Your order{" "}
-            <span className="font-mono font-semibold">#{placedOrder.id}</span>{" "}
-            has been received.
-          </p>
-          <p className="text-lg font-bold">
-            Total: Rp {placedOrder.total.toLocaleString("id-ID")}
-          </p>
-          <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              href="/orders"
-              className="rounded-md bg-foreground px-4 py-2 text-sm font-semibold text-background hover:opacity-90"
-            >
-              View orders
-            </Link>
-            <Link
-              href="/products"
-              className="rounded-md border border-black/15 px-4 py-2 text-sm font-semibold hover:bg-foreground/5 dark:border-white/20"
-            >
-              Continue shopping
-            </Link>
-          </div>
-        </Card>
-      </div>
-    );
   }
 
   // --- Empty cart ----------------------------------------------------------

@@ -25,9 +25,11 @@ const NAV_LINKS = [
 export default function Header() {
   const pathname = usePathname();
   const { totalItems } = useCart();
-  const { isAdmin } = useAuth();
+  const { isAdmin, status, logout } = useAuth();
 
   const mounted = useMounted();
+  const isAuthenticated = mounted && status === "authenticated";
+  const showLogout = isAuthenticated && isAdmin;
 
   const linkClass = (active: boolean) =>
     `rounded-md px-3 py-2 text-sm font-medium transition-colors ${
@@ -46,13 +48,23 @@ export default function Header() {
         <nav aria-label="Primary">
           <ul className="flex items-center gap-1">
             <li>
-              <Link
-                href="/auth/login"
-                aria-current={pathname.startsWith("/auth/login") ? "page" : undefined}
-                className={linkClass(pathname.startsWith("/auth/login"))}
-              >
-                Login
-              </Link>
+              {showLogout ? (
+                <button
+                  type="button"
+                  onClick={logout}
+                  className={linkClass(false)}
+                >
+                  Logout
+                </button>
+              ) : (
+                <Link
+                  href="/auth/login"
+                  aria-current={pathname.startsWith("/auth/login") ? "page" : undefined}
+                  className={linkClass(pathname.startsWith("/auth/login"))}
+                >
+                  Login
+                </Link>
+              )}
             </li>
             {NAV_LINKS.map((link) => {
               const isActive =
@@ -75,11 +87,11 @@ export default function Header() {
             {mounted && isAdmin && (
               <li>
                 <Link
-                  href="/admin/dashboard"
+                  href="/dashboard"
                   aria-current={
-                    pathname.startsWith("/admin/dashboard") ? "page" : undefined
+                    pathname.startsWith("/dashboard") ? "page" : undefined
                   }
-                  className={linkClass(pathname.startsWith("/admin/dashboard"))}
+                  className={linkClass(pathname.startsWith("/dashboard"))}
                 >
                   Dashboard
                 </Link>

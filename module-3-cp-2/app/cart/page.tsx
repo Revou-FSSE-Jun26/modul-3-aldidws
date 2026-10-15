@@ -1,12 +1,24 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Card from "@/components/Card";
 import { useCart } from "@/lib/cart";
+import { useAuth } from "@/lib/useAuth";
 
 export default function CartPage() {
   const { items, totalItems, totalPrice, updateQuantity, removeItem, clear } =
     useCart();
+  const { status } = useAuth();
+  const router = useRouter();
+
+  function handleCheckout() {
+    if (status !== "authenticated") {
+      router.push(`/auth/login?redirect=${encodeURIComponent("/checkout")}`);
+      return;
+    }
+    router.push("/checkout");
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -100,12 +112,13 @@ export default function CartPage() {
             </span>
           </Card>
 
-          <Link
-            href="/checkout"
+          <button
+            type="button"
+            onClick={handleCheckout}
             className="rounded-md bg-foreground px-4 py-3 text-center text-sm font-semibold text-background hover:opacity-90"
           >
             Proceed to checkout
-          </Link>
+          </button>
         </>
       )}
     </div>

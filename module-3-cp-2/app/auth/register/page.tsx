@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Card from "@/components/Card";
+import PasswordInput from "@/components/PasswordInput";
 import { AuthError, register } from "@/lib/auth";
 
 export default function RegisterPage() {
@@ -11,6 +12,7 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -23,12 +25,17 @@ export default function RegisterPage() {
       return;
     }
 
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
     setLoading(true);
     try {
-      const result = await register({ name, email, password });
+      const result = await register({ name, email, password, confirmPassword });
       localStorage.setItem("token", result.token);
       localStorage.setItem("user", JSON.stringify(result.user));
-      router.push(result.redirect ?? "/");
+      router.push(result.user.role === "admin" ? "/dashboard" : "/");
     } catch (err) {
       setError(
         err instanceof AuthError ? err.message : "An unexpected error occurred.",
@@ -75,16 +82,30 @@ export default function RegisterPage() {
             <label htmlFor="password" className="text-sm font-medium">
               Password
             </label>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={8}
-              className="rounded-md border border-black/15 bg-background px-3 py-2 text-sm outline-none focus:border-foreground/40 dark:border-white/20"
             />
             <p className="text-xs text-foreground/50">At least 8 characters.</p>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label htmlFor="confirmPassword" className="text-sm font-medium">
+              Confirm Password
+            </label>
+            <PasswordInput
+              id="confirmPassword"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              minLength={8}
+            />
+            {confirmPassword.length > 0 && confirmPassword !== password && (
+              <p className="text-xs text-red-500">Passwords do not match.</p>
+            )}
           </div>
 
           {error && (

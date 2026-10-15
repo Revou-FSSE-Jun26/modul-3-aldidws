@@ -93,20 +93,6 @@ export async function getCategory(id: string): Promise<Category | null> {
   }
 }
 
-export async function getOrders(): Promise<Order[]> {
-  const data = await apiFetch<{ orders: Order[] }>("/orders");
-  return data.orders;
-}
-
-export async function getOrder(id: string): Promise<Order | null> {
-  try {
-    const data = await apiFetch<{ order: Order }>(`/orders/${id}`);
-    return data.order;
-  } catch {
-    return null;
-  }
-}
-
 interface RawOrderItem {
   product_id: string | number;
   product_name: string;
@@ -143,6 +129,31 @@ function mapOrder(raw: RawOrder): Order {
   };
 }
 
+function authHeader(token: string): HeadersInit {
+  return { Authorization: `Bearer ${token}` };
+}
+
+export async function getMyOrders(token: string): Promise<Order[]> {
+  const data = await apiFetch<{ orders: RawOrder[] }>("/orders", {
+    headers: authHeader(token),
+  });
+  return data.orders.map(mapOrder);
+}
+
+export async function getOrder(
+  id: string,
+  token: string,
+): Promise<Order | null> {
+  try {
+    const data = await apiFetch<{ order: RawOrder }>(`/orders/${id}`, {
+      headers: authHeader(token),
+    });
+    return mapOrder(data.order);
+  } catch {
+    return null;
+  }
+}
+
 export interface CreateOrderItemInput {
   productId: number | string;
   quantity: number;
@@ -176,14 +187,6 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
 
 // --- Admin -----------------------------------------------------------------
 
-function authHeader(token: string): HeadersInit {
-  return { Authorization: `Bearer ${token}` };
-}
-
-/**
- * Admin view of all orders. Requires an admin bearer token; the API is
- * expected to enforce the authorization server-side.
- */
 export async function getAdminOrders(token: string): Promise<Order[]> {
   const data = await apiFetch<{ orders: RawOrder[] }>("/orders", {
     headers: authHeader(token),
@@ -200,10 +203,6 @@ export interface DashboardStats {
   recentOrders: Order[];
 }
 
-/**
- * Aggregates the data an admin dashboard needs in one call. Fetches
- * products, categories and orders in parallel and derives summary metrics.
- */
 export async function getDashboardStats(
   token: string,
 ): Promise<DashboardStats> {

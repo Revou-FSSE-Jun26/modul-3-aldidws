@@ -7,6 +7,7 @@ export interface RegisterInput {
   name: string;
   email: string;
   password: string;
+  confirmPassword: string;
 }
 
 export interface LoginInput {
@@ -58,9 +59,15 @@ async function authFetch<T>(path: string, init: RequestInit): Promise<T> {
 }
 
 export async function register(input: RegisterInput): Promise<AuthResponse> {
+  const { name, email, password, confirmPassword } = input;
   return authFetch<AuthResponse>("/register", {
     method: "POST",
-    body: JSON.stringify(input),
+    body: JSON.stringify({
+      name,
+      email,
+      password,
+      confirm_password: confirmPassword,
+    }),
   });
 }
 
