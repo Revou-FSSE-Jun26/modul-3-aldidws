@@ -17,10 +17,18 @@ export interface Category {
 
 export interface Order {
   id: number | string;
+  orderNumber?: string;
   customerName: string;
   total: number;
   status: string;
   createdAt?: string;
+  recipientName?: string;
+  recipientPhone?: string;
+  shippingAddress?: string;
+  shippingCity?: string;
+  shippingProvince?: string;
+  shippingPostalCode?: string;
+  customerNote?: string;
   items?: OrderItem[];
 }
 

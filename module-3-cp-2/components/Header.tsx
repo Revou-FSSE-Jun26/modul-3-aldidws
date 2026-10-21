@@ -20,16 +20,16 @@ const NAV_LINKS = [
   { href: "/products", label: "Products" },
   { href: "/categories", label: "Categories" },
   { href: "/orders", label: "Orders" },
+  { href: "/profile", label: "Profile" },
 ] as const;
 
 export default function Header() {
   const pathname = usePathname();
   const { totalItems } = useCart();
-  const { isAdmin, status, logout } = useAuth();
+  const { isAdmin, status, logout, user } = useAuth(true);
 
   const mounted = useMounted();
   const isAuthenticated = mounted && status === "authenticated";
-  const showLogout = isAuthenticated && isAdmin;
 
   const linkClass = (active: boolean) =>
     `rounded-md px-3 py-2 text-sm font-medium transition-colors ${
@@ -47,8 +47,21 @@ export default function Header() {
 
         <nav aria-label="Primary">
           <ul className="flex items-center gap-1">
+            {isAuthenticated && (
+              <li>
+                <Link
+                  href="/profile"
+                  aria-current={
+                    pathname.startsWith("/profile") ? "page" : undefined
+                  }
+                  className={linkClass(pathname.startsWith("/profile"))}
+                >
+                  {user?.name || user?.email || "Profile"}
+                </Link>
+              </li>
+            )}
             <li>
-              {showLogout ? (
+              {isAuthenticated ? (
                 <button
                   type="button"
                   onClick={logout}

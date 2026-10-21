@@ -3,6 +3,19 @@ import type { Order, OrderItem, Category, Product } from "./types";
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://revo-otoshop.onrender.com";
 
+export class ApiError extends Error {
+  status: number;
+  technicalMessage: string;
+
+  constructor(message: string, status: number, technicalMessage: string) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+    this.technicalMessage = technicalMessage;
+    this.cause = technicalMessage;
+  }
+}
+
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const url = `${API_BASE_URL}${path}`;
 
@@ -17,13 +30,24 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
       cache: "no-store",
     });
   } catch {
-    throw new Error(
-      `Unable to connect to the API at ${url}. Ensure the catalog server is running.`,
+    throw new ApiError(
+      "Unable to reach the server. Check your connection and try again.",
+      0,
+      `Unable to connect to the API at ${url}.`,
     );
   }
 
   if (!res.ok) {
-    throw new Error(`Request to ${url} failed with status ${res.status}.`);
+    const technicalMessage = `Request to ${url} failed with status ${res.status}.`;
+    let message: string;
+    if (res.status === 404) {
+      message = "The requested item could not be found.";
+    } else if (res.status >= 500) {
+      message = "The server is having trouble right now. Please try again.";
+    } else {
+      message = "Something went wrong while loading data. Please try again.";
+    }
+    throw new ApiError(message, res.status, technicalMessage);
   }
 
   return (await res.json()) as T;
@@ -102,10 +126,18 @@ interface RawOrderItem {
 
 interface RawOrder {
   id: string | number;
-  customer_name: string;
+  order_number?: string | null;
+  customer_name?: string | null;
   total: string | number;
   status: string;
   created_at?: string | null;
+  recipient_name?: string | null;
+  recipient_phone?: string | null;
+  shipping_address?: string | null;
+  shipping_city?: string | null;
+  shipping_province?: string | null;
+  shipping_postal_code?: string | null;
+  customer_note?: string | null;
   items?: RawOrderItem[];
 }
 
@@ -121,10 +153,18 @@ function mapOrderItem(raw: RawOrderItem): OrderItem {
 function mapOrder(raw: RawOrder): Order {
   return {
     id: raw.id,
-    customerName: raw.customer_name,
+    orderNumber: raw.order_number ?? undefined,
+    customerName: raw.customer_name ?? raw.recipient_name ?? "",
     total: Number(raw.total),
     status: raw.status,
     createdAt: raw.created_at ?? undefined,
+    recipientName: raw.recipient_name ?? undefined,
+    recipientPhone: raw.recipient_phone ?? undefined,
+    shippingAddress: raw.shipping_address ?? undefined,
+    shippingCity: raw.shipping_city ?? undefined,
+    shippingProvince: raw.shipping_province ?? undefined,
+    shippingPostalCode: raw.shipping_postal_code ?? undefined,
+    customerNote: raw.customer_note ?? undefined,
     items: raw.items?.map(mapOrderItem),
   };
 }
@@ -160,17 +200,34 @@ export interface CreateOrderItemInput {
 }
 
 export interface CreateOrderInput {
-  customerName: string;
-  email: string;
-  address: string;
+  recipientName: string;
+  recipientPhone: string;
+  shippingAddress: string;
+  shippingCity: string;
+  shippingProvince: string;
+  shippingPostalCode: string;
+  shippingCost: number;
+  discount: number;
+  customerNote?: string;
   items: CreateOrderItemInput[];
 }
 
-export async function createOrder(input: CreateOrderInput): Promise<Order> {
+export async function createOrder(
+  input: CreateOrderInput,
+  token: string,
+): Promise<Order> {
   const payload = {
-    customer_name: input.customerName,
-    email: input.email,
-    address: input.address,
+    shipping: {
+      recipient_name: input.recipientName,
+      recipient_phone: input.recipientPhone,
+      shipping_address: input.shippingAddress,
+      shipping_city: input.shippingCity,
+      shipping_province: input.shippingProvince,
+      shipping_postal_code: input.shippingPostalCode,
+    },
+    shipping_cost: input.shippingCost,
+    discount: input.discount,
+    customer_note: input.customerNote ?? "",
     items: input.items.map((item) => ({
       product_id: item.productId,
       quantity: item.quantity,
@@ -180,6 +237,7 @@ export async function createOrder(input: CreateOrderInput): Promise<Order> {
   const data = await apiFetch<{ order: RawOrder }>("/orders", {
     method: "POST",
     body: JSON.stringify(payload),
+    headers: authHeader(token),
   });
 
   return mapOrder(data.order);

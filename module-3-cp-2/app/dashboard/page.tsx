@@ -17,12 +17,14 @@ const StatCard = memo(function StatCard({
   label,
   value,
   hint,
+  href,
 }: {
   label: string;
   value: string | number;
   hint?: string;
+  href?: string;
 }) {
-  return (
+  const content = (
     <Card className="flex flex-col gap-1">
       <span className="text-sm text-foreground/60">{label}</span>
       <span className="text-2xl font-bold tracking-tight">{value}</span>
@@ -31,6 +33,19 @@ const StatCard = memo(function StatCard({
       ) : null}
     </Card>
   );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className="rounded-xl transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground"
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return content;
 });
 
 const QuickLinkCard = memo(function QuickLinkCard({
@@ -125,7 +140,7 @@ function DashboardContent() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Products" value={stats.productCount} />
         <StatCard label="Categories" value={stats.categoryCount} />
-        <StatCard label="Orders" value={stats.orderCount} />
+        <StatCard label="Orders"value={stats.orderCount}/>
         <StatCard
           label="Total revenue"
           value={formatRupiah(stats.totalRevenue)}
@@ -141,7 +156,7 @@ function DashboardContent() {
         <QuickLinkCard
           title="Manage categories"
           description="Review store categories"
-          href="/categories"
+          href="dashboard/categories"
           label="Categories"
         />
         <QuickLinkCard

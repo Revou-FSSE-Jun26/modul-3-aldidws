@@ -5,43 +5,111 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Card from "@/components/Card";
 import { useCart } from "@/lib/cart";
+import { useAuth } from "@/lib/useAuth";
 import { createOrder } from "@/lib/api";
 
 interface FormValues {
-  name: string;
-  email: string;
-  address: string;
+  recipient_name: string;
+  recipient_phone: string;
+  shipping_address: string;
+  shipping_city: string;
+  shipping_province: string;
+  shipping_postal_code: string;
+  shipping_cost: string;
+  discount: string;
+  customer_note: string;
 }
 
-interface FormErrors {
-  name?: string;
-  email?: string;
-  address?: string;
-}
+type FormErrors = Partial<Record<keyof FormValues, string>>;
 
 const EMPTY_FORM: FormValues = {
-  name: "",
-  email: "",
-  address: "",
+  recipient_name: "",
+  recipient_phone: "",
+  shipping_address: "",
+  shipping_city: "",
+  shipping_province: "",
+  shipping_postal_code: "",
+  shipping_cost: "0",
+  discount: "0",
+  customer_note: "",
 };
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_PATTERN = /^[+\d][\d\s-]{6,}$/;
+const POSTAL_PATTERN = /^\d{4,10}$/;
+
+const FIELD_CLASS =
+  "rounded-md border border-black/15 bg-background px-3 py-2 text-sm outline-none focus:border-foreground/40 dark:border-white/20";
+
+interface FieldConfig {
+  name: keyof FormValues;
+  label: string;
+  type?: string;
+  multiline?: boolean;
+  placeholder?: string;
+  optional?: boolean;
+}
+
+const FIELDS: FieldConfig[] = [
+  { name: "recipient_name", label: "Recipient name" },
+  { name: "recipient_phone", label: "Recipient phone", type: "tel" },
+  { name: "shipping_address", label: "Shipping address", type: "text", },
+  { name: "shipping_city", label: "City" },
+  { name: "shipping_province", label: "Province" },
+  { name: "shipping_postal_code", label: "Postal code", type: "text" },
+  { name: "shipping_cost", label: "Shipping cost (Rp)", type: "number" },
+  { name: "discount", label: "Discount (Rp)", type: "number" },
+  {
+    name: "customer_note",
+    label: "Customer note",
+    multiline: true,
+    optional: true,
+    placeholder: "Optional delivery notes…",
+  },
+];
+
+/** Parse a currency-ish string input into a non-negative number (0 when blank/invalid). */
+function parseAmount(raw: string): number {
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
 
 function validate(values: FormValues): FormErrors {
   const errors: FormErrors = {};
 
-  if (!values.name.trim()) {
-    errors.name = "Your name is required.";
+  if (!values.recipient_name.trim()) {
+    errors.recipient_name = "Recipient name is required.";
   }
 
-  if (!values.email.trim()) {
-    errors.email = "An email address is required.";
-  } else if (!EMAIL_PATTERN.test(values.email.trim())) {
-    errors.email = "Enter a valid email address.";
+  if (!values.recipient_phone.trim()) {
+    errors.recipient_phone = "A phone number is required.";
+  } else if (!PHONE_PATTERN.test(values.recipient_phone.trim())) {
+    errors.recipient_phone = "Enter a valid phone number.";
   }
 
-  if (!values.address.trim()) {
-    errors.address = "A shipping address is required.";
+  if (!values.shipping_address.trim()) {
+    errors.shipping_address = "A shipping address is required.";
+  }
+
+  if (!values.shipping_city.trim()) {
+    errors.shipping_city = "City is required.";
+  }
+
+  if (!values.shipping_province.trim()) {
+    errors.shipping_province = "Province is required.";
+  }
+
+  if (!values.shipping_postal_code.trim()) {
+    errors.shipping_postal_code = "Postal code is required.";
+  } else if (!POSTAL_PATTERN.test(values.shipping_postal_code.trim())) {
+    errors.shipping_postal_code = "Enter a valid postal code.";
+  }
+
+  if (values.shipping_cost.trim() && Number(values.shipping_cost) < 0) {
+    errors.shipping_cost = "Shipping cost cannot be negative.";
+  }
+
+  if (values.discount.trim() && Number(values.discount) < 0) {
+    errors.discount = "Discount cannot be negative.";
   }
 
   return errors;
@@ -49,12 +117,17 @@ function validate(values: FormValues): FormErrors {
 
 export default function CheckoutPage() {
   const { items, totalItems, totalPrice, clear } = useCart();
+  const { token } = useAuth();
   const router = useRouter();
 
   const [values, setValues] = useState<FormValues>(EMPTY_FORM);
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const shippingCost = parseAmount(values.shipping_cost);
+  const discount = parseAmount(values.discount);
+  const grandTotal = Math.max(0, totalPrice + shippingCost - discount);
 
   function handleChange(
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -78,17 +151,31 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (!token) {
+      router.push(`/auth/login?redirect=${encodeURIComponent("/checkout")}`);
+      return;
+    }
+
     setSubmitting(true);
     try {
-      await createOrder({
-        customerName: values.name.trim(),
-        email: values.email.trim(),
-        address: values.address.trim(),
-        items: items.map((item) => ({
-          productId: item.id,
-          quantity: item.quantity,
-        })),
-      });
+      await createOrder(
+        {
+          recipientName: values.recipient_name.trim(),
+          recipientPhone: values.recipient_phone.trim(),
+          shippingAddress: values.shipping_address.trim(),
+          shippingCity: values.shipping_city.trim(),
+          shippingProvince: values.shipping_province.trim(),
+          shippingPostalCode: values.shipping_postal_code.trim(),
+          shippingCost,
+          discount,
+          customerNote: values.customer_note.trim() || undefined,
+          items: items.map((item) => ({
+            productId: item.id,
+            quantity: item.quantity,
+          })),
+        },
+        token,
+      );
 
       clear();
       router.push("/orders");
@@ -137,64 +224,49 @@ export default function CheckoutPage() {
           >
             <h2 className="text-lg font-semibold">Shipping details</h2>
 
-            <div className="flex flex-col gap-1">
-              <label htmlFor="name" className="text-sm font-medium">
-                Full name
-              </label>
-              <input
-                id="name"
-                name="name"
-                value={values.name}
-                onChange={handleChange}
-                aria-invalid={Boolean(errors.name)}
-                className="rounded-md border border-black/15 bg-background px-3 py-2 text-sm outline-none focus:border-foreground/40 dark:border-white/20"
-              />
-              {errors.name && (
-                <p className="text-xs text-red-500" aria-live="polite">
-                  {errors.name}
-                </p>
-              )}
-            </div>
+            {FIELDS.map((config) => {
+              const { name, label, type, multiline, placeholder, optional } =
+                config;
+              const error = errors[name];
+              const shared = {
+                id: name,
+                name,
+                value: values[name],
+                onChange: handleChange,
+                placeholder,
+                "aria-invalid": Boolean(error),
+                className: FIELD_CLASS,
+              } as const;
 
-            <div className="flex flex-col gap-1">
-              <label htmlFor="email" className="text-sm font-medium">
-                Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                value={values.email}
-                onChange={handleChange}
-                aria-invalid={Boolean(errors.email)}
-                className="rounded-md border border-black/15 bg-background px-3 py-2 text-sm outline-none focus:border-foreground/40 dark:border-white/20"
-              />
-              {errors.email && (
-                <p className="text-xs text-red-500" aria-live="polite">
-                  {errors.email}
-                </p>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label htmlFor="address" className="text-sm font-medium">
-                Shipping address
-              </label>
-              <textarea
-                id="address"
-                name="address"
-                value={values.address}
-                onChange={handleChange}
-                rows={3}
-                aria-invalid={Boolean(errors.address)}
-                className="rounded-md border border-black/15 bg-background px-3 py-2 text-sm outline-none focus:border-foreground/40 dark:border-white/20"
-              />
-              {errors.address && (
-                <p className="text-xs text-red-500" aria-live="polite">
-                  {errors.address}
-                </p>
-              )}
-            </div>
+              return (
+                <div key={name} className="flex flex-col gap-1">
+                  <label htmlFor={name} className="text-sm font-medium">
+                    {label}
+                    {optional && (
+                      <span className="ml-1 text-xs font-normal text-foreground/50">
+                        (optional)
+                      </span>
+                    )}
+                  </label>
+                  {multiline ? (
+                    <textarea {...shared} rows={3} />
+                  ) : (
+                    <input
+                      {...shared}
+                      type={type ?? "text"}
+                      {...(type === "number"
+                        ? { min: 0, inputMode: "numeric" as const }
+                        : {})}
+                    />
+                  )}
+                  {error && (
+                    <p className="text-xs text-red-500" aria-live="polite">
+                      {error}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
 
             {submitError && (
               <p
@@ -239,12 +311,27 @@ export default function CheckoutPage() {
               ))}
             </ul>
 
+            <div className="flex flex-col gap-2 border-t border-black/10 pt-3 text-sm dark:border-white/15">
+              <div className="flex items-center justify-between text-foreground/70">
+                <span>
+                  Subtotal ({totalItems} item{totalItems === 1 ? "" : "s"})
+                </span>
+                <span>Rp {totalPrice.toLocaleString("id-ID")}</span>
+              </div>
+              <div className="flex items-center justify-between text-foreground/70">
+                <span>Shipping</span>
+                <span>Rp {shippingCost.toLocaleString("id-ID")}</span>
+              </div>
+              <div className="flex items-center justify-between text-foreground/70">
+                <span>Discount</span>
+                <span>&minus; Rp {discount.toLocaleString("id-ID")}</span>
+              </div>
+            </div>
+
             <div className="flex items-center justify-between border-t border-black/10 pt-3 dark:border-white/15">
-              <span className="text-sm text-foreground/60">
-                {totalItems} item{totalItems === 1 ? "" : "s"}
-              </span>
+              <span className="text-sm text-foreground/60">Total</span>
               <span className="text-lg font-bold">
-                Rp {totalPrice.toLocaleString("id-ID")}
+                Rp {grandTotal.toLocaleString("id-ID")}
               </span>
             </div>
           </Card>
