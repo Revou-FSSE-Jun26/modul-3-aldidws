@@ -1,20 +1,12 @@
-import type { NextConfig } from "next";
+ import type { NextConfig } from 'next';
+ import withBundleAnalyzer from '@next/bundle-analyzer';
 
-const nextConfig: NextConfig = {
-  /* config options here */
-  experimental: {
-    agentFeedback: true,
-  },
-  cacheComponents: true,
-  partialPrefetching: true,
-  turbopack: {
-    rules: {
-      "*.css": {
-        loaders: ["@tailwindcss/turbopack"],
-        as: "*.css",
-      },
-    },
-  },
-};
+ const nextConfig: NextConfig = {
+   // your existing config...
+ };
 
-export default nextConfig;
+ const withAnalyzer = withBundleAnalyzer({
+   enabled: process.env.ANALYZE === 'true',
+ });
+
+ export default withAnalyzer(nextConfig);

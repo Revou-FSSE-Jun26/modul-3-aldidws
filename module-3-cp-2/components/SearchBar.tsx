@@ -45,6 +45,7 @@ export default function SearchBar({
   return (
     <form onSubmit={handleSubmit} role="search" className="flex gap-2">
       <input
+        id="searchbar"
         type="search"
         value={value}
         onChange={(event) => setValue(event.target.value)}
@@ -53,6 +54,7 @@ export default function SearchBar({
         className="flex-1 rounded-md border border-black/15 bg-background px-3 py-2 text-sm outline-none focus:border-foreground/40 dark:border-white/20"
       />
       <button
+        id="search"
         type="submit"
         className="rounded-md bg-foreground px-4 py-2 text-sm font-semibold text-background hover:opacity-90"
       >
