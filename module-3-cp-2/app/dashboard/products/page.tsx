@@ -4,6 +4,8 @@ import ProductCard from "@/components/ProductCard";
 import AddProductForm from "@/components/AddProductForm";
 import EditProductForm from "@/components/EditProductForm";
 
+export const dynamic = "force-dynamic";
+
 export default async function ProductsPage({
   searchParams,
 }: PageProps<"/products">) {

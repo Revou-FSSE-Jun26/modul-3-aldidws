@@ -2,12 +2,17 @@ import Link from "next/link";
 import Card from "@/components/Card";
 import { getCategories } from "@/lib/api";
 
+export const revalidate = 60;
+
 export const metadata = {
   title: "Category — Revo Otoshop",
 };
 
 export default async function CategoriesPage() {
-  const categories = await getCategories();
+  const categories = await getCategories({
+    revalidate: 60,
+    tags: ["categories"],
+  });
 
   return (
     <div className="flex flex-col gap-6">

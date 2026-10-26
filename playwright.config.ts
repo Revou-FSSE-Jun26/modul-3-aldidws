@@ -71,20 +71,14 @@ export default defineConfig({
   ],
 
   /*
-   * Two web servers start before the suite:
-   *   1. The dependency-free mock API (tests/mock/server.mjs) on port 4000.
-   *   2. The Next.js dev server, with its API base URLs pointed at the mock so
-   *      BOTH server-side fetches (products/categories/orders) and client-side
-   *      fetches (login/register/me) hit deterministic fixtures instead of the
-   *      live https://revo-otoshop.onrender.com backend.
+   * The Next.js dev server starts before the suite. Both server-side fetches
+   * (products/categories/orders) and client-side fetches (login/register/me)
+   * hit the live https://revo-otoshop.onrender.com backend directly.
+   *
+   * NOTE: tests now depend on the live backend being reachable and on its data,
+   * so they are no longer deterministic and may be flaky or require network.
    */
   webServer: [
-    {
-      command: 'node tests/mock/server.mjs',
-      url: 'http://localhost:4000/health',
-      reuseExistingServer: !process.env.CI,
-      timeout: 30 * 1000,
-    },
     {
       command: 'npm run dev',
       cwd: './module-3-cp-2',
@@ -92,8 +86,8 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       timeout: 120 * 1000,
       env: {
-        NEXT_PUBLIC_API_BASE_URL: 'http://localhost:4000',
-        NEXT_PUBLIC_AUTH_BASE_URL: 'http://localhost:4000',
+        NEXT_PUBLIC_API_BASE_URL: 'https://revo-otoshop.onrender.com',
+        NEXT_PUBLIC_AUTH_BASE_URL: 'https://revo-otoshop.onrender.com',
       },
     },
   ],

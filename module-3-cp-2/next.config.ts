@@ -2,10 +2,15 @@
  import withBundleAnalyzer from '@next/bundle-analyzer';
 
  const nextConfig: NextConfig = {
-   // your existing config...
+   turbopack: {
+     rules: {
+       '*.css': {
+         loaders: ['@tailwindcss/turbopack'],
+         as: '*.css',
+       },
+     },
+   },
    experimental: {
-     // Matikan auto-upgrade bawaan `next build` supaya build tidak
-     // mencoba konek ke npm registry (penyebab error ECONNRESET saat build).
      agentUpgrade: false,
    },
  };

@@ -2,8 +2,10 @@ import Link from "next/link";
 import { getProducts } from "@/lib/api";
 import ProductCard from "@/components/ProductCard";
 
+export const dynamic = "force-static";
+
 export default async function Home() {
-  const products = await getProducts();
+  const products = await getProducts({ cache: "force-cache" });
   const featured = products.slice(0, 5);
 
   return (

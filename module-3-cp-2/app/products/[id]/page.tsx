@@ -1,14 +1,27 @@
 
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getProduct } from "@/lib/api";
+import { getProducts, getProduct, type CacheOptions } from "@/lib/api";
 import ProductCard from "@/components/ProductCard";
+
+export const revalidate = 120;
+
+export async function generateStaticParams() {
+  const products = await getProducts({ cache: "force-cache" });
+  return products.map((product) => ({ id: String(product.id) }));
+}
+
+// Shared cache hints so the page body and `generateMetadata` dedupe the fetch.
+const productCache = (id: string): CacheOptions => ({
+  revalidate: 120,
+  tags: ["products", `product:${id}`],
+});
 
 export async function generateMetadata({
   params,
 }: PageProps<"/products/[id]">): Promise<Metadata> {
   const { id } = await params;
-  const product = await getProduct(id);
+  const product = await getProduct(id, productCache(id));
 
   if (!product) {
     return { title: "Product not found — RevoShop" };
@@ -25,7 +38,7 @@ export default async function ProductDetailPage({
   params,
 }: PageProps<"/products/[id]">) {
   const { id } = await params;
-  const product = await getProduct(id);
+  const product = await getProduct(id, productCache(id));
 
   if (!product) {
     notFound();

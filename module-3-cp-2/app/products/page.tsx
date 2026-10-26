@@ -2,6 +2,8 @@ import Link from "next/link";
 import { getCategories, getProducts } from "@/lib/api";
 import ProductCard from "@/components/ProductCard";
 
+export const dynamic = "force-dynamic";
+
 export default async function ProductsPage({
   searchParams,
 }: PageProps<"/products">) {

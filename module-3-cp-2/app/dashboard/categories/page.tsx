@@ -3,6 +3,8 @@ import Card from "@/components/Card";
 import AddCategoryForm from "@/components/AddCategoryForm";
 import { getCategories } from "@/lib/api";
 
+export const dynamic = "force-dynamic";
+
 export const metadata = {
   title: "Category — Revo Otoshop",
 };
