@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Card from "./Card";
-import type { Product } from "@/lib/types";
+import { createProduct } from "@/lib/api";
+import { useAuth } from "@/lib/useAuth";
 
 interface FormValues {
   name: string;
@@ -49,9 +51,12 @@ function validate(values: FormValues): FormErrors {
 }
 
 export default function AddProductForm() {
+  const { token } = useAuth();
+  const router = useRouter();
   const [values, setValues] = useState<FormValues>(EMPTY_FORM);
   const [errors, setErrors] = useState<FormErrors>({});
-  const [products, setProducts] = useState<Product[]>([]);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   function handleChange(
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -60,8 +65,9 @@ export default function AddProductForm() {
     setValues((prev) => ({ ...prev, [name]: value }));
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setSubmitError(null);
 
     const nextErrors = validate(values);
     setErrors(nextErrors);
@@ -69,17 +75,32 @@ export default function AddProductForm() {
       return;
     }
 
-    const newProduct: Product = {
-      id: Date.now(),
-      name: values.name.trim(),
-      price: Number(values.price),
-      stock: Number(values.stock),
-      description: values.description.trim() || undefined,
-    };
+    if (!token) {
+      setSubmitError("You must be signed in.");
+      return;
+    }
 
-    setProducts((prev) => [...prev, newProduct]);
-    setValues(EMPTY_FORM);
-    setErrors({});
+    setSubmitting(true);
+    try {
+      await createProduct(
+        {
+          name: values.name.trim(),
+          price: Number(values.price),
+          stock: Number(values.stock),
+          description: values.description.trim() || undefined,
+        },
+        token,
+      );
+      setValues(EMPTY_FORM);
+      setErrors({});
+      router.refresh();
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error ? err.message : "Failed to create product",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -165,35 +186,21 @@ export default function AddProductForm() {
             />
           </div>
 
+          {submitError && (
+            <p className="text-xs text-red-500" aria-live="polite">
+              {submitError}
+            </p>
+          )}
+
           <button
             type="submit"
-            className="w-full rounded-md bg-foreground px-4 py-2 text-sm font-semibold text-background hover:opacity-90"
+            disabled={submitting}
+            className="w-full rounded-md bg-foreground px-4 py-2 text-sm font-semibold text-background hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Save Product
+            {submitting ? "Saving…" : "Save Product"}
           </button>
         </form>
       </Card>
-
-      {products.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <h3 className="text-sm font-semibold text-foreground/70">
-            Product added ({products.length})
-          </h3>
-          <ul className="flex flex-col gap-2">
-            {products.map((product) => (
-              <li key={product.id}>
-                <Card className="flex items-center justify-between py-3">
-                  <span className="font-medium">{product.name}</span>
-                  <span className="text-sm text-foreground/60">
-                    Rp {product.price.toLocaleString("id-ID")} &middot; stock{" "}
-                    {product.stock}
-                  </span>
-                </Card>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 }

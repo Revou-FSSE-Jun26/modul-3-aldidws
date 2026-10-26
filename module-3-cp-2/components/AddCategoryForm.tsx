@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Card from "./Card";
-import type { Category } from "@/lib/types";
+import { createCategory } from "@/lib/api";
+import { useAuth } from "@/lib/useAuth";
 
 interface FormValues {
   name: string;
@@ -29,9 +31,12 @@ function validate(values: FormValues): FormErrors {
 }
 
 export default function AddCategoryForm() {
+  const { token } = useAuth();
+  const router = useRouter();
   const [values, setValues] = useState<FormValues>(EMPTY_FORM);
   const [errors, setErrors] = useState<FormErrors>({});
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   function handleChange(
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -40,8 +45,9 @@ export default function AddCategoryForm() {
     setValues((prev) => ({ ...prev, [name]: value }));
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setSubmitError(null);
 
     const nextErrors = validate(values);
     setErrors(nextErrors);
@@ -49,15 +55,30 @@ export default function AddCategoryForm() {
       return;
     }
 
-    const newCategory: Category = {
-      id: Date.now(),
-      name: values.name.trim(),
-      description: values.description.trim() || undefined,
-    };
+    if (!token) {
+      setSubmitError("You must be signed in.");
+      return;
+    }
 
-    setCategories((prev) => [...prev, newCategory]);
-    setValues(EMPTY_FORM);
-    setErrors({});
+    setSubmitting(true);
+    try {
+      await createCategory(
+        {
+          name: values.name.trim(),
+          description: values.description.trim() || undefined,
+        },
+        token,
+      );
+      setValues(EMPTY_FORM);
+      setErrors({});
+      router.refresh();
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error ? err.message : "Failed to create category",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -99,36 +120,21 @@ export default function AddCategoryForm() {
             />
           </div>
 
+          {submitError && (
+            <p className="text-xs text-red-500" aria-live="polite">
+              {submitError}
+            </p>
+          )}
+
           <button
             type="submit"
-            className="w-full rounded-md bg-foreground px-4 py-2 text-sm font-semibold text-background hover:opacity-90"
+            disabled={submitting}
+            className="w-full rounded-md bg-foreground px-4 py-2 text-sm font-semibold text-background hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Save Category
+            {submitting ? "Saving…" : "Save Category"}
           </button>
         </form>
       </Card>
-
-      {categories.length > 0 && (
-        <div className="flex flex-col gap-2">
-          <h3 className="text-sm font-semibold text-foreground/70">
-            Category added ({categories.length})
-          </h3>
-          <ul className="flex flex-col gap-2">
-            {categories.map((category) => (
-              <li key={category.id}>
-                <Card className="flex items-center justify-between py-3">
-                  <span className="font-medium">{category.name}</span>
-                  {category.description && (
-                    <span className="text-sm text-foreground/60">
-                      {category.description}
-                    </span>
-                  )}
-                </Card>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
     </div>
   );
 }

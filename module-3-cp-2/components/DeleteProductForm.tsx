@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Card from "./Card";
+import { deleteProduct } from "@/lib/api";
+import { useAuth } from "@/lib/useAuth";
 import type { Product } from "@/lib/types";
 
 interface DeleteProductFormProps {
@@ -15,14 +18,19 @@ export default function DeleteProductForm({
   onDelete,
   onCancel,
 }: DeleteProductFormProps) {
+  const { token } = useAuth();
+  const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [deleted, setDeleted] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [currentId, setCurrentId] = useState(product.id);
   if (product.id !== currentId) {
     setCurrentId(product.id);
     setConfirming(false);
     setDeleted(false);
+    setError(null);
   }
 
   function handleRequestDelete() {
@@ -34,10 +42,26 @@ export default function DeleteProductForm({
     onCancel?.();
   }
 
-  function handleConfirmDelete() {
-    onDelete?.(product);
-    setConfirming(false);
-    setDeleted(true);
+  async function handleConfirmDelete() {
+    setError(null);
+
+    if (!token) {
+      setError("You must be signed in.");
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      await deleteProduct(product.id, token);
+      onDelete?.(product);
+      setDeleted(true);
+      router.push("/dashboard/products");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Delete failed");
+      setConfirming(false);
+    } finally {
+      setDeleting(false);
+    }
   }
 
   return (
@@ -73,9 +97,10 @@ export default function DeleteProductForm({
                 <button
                   type="button"
                   onClick={handleConfirmDelete}
-                  className="flex-1 rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+                  disabled={deleting}
+                  className="flex-1 rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Yes, delete
+                  {deleting ? "Deleting…" : "Yes, delete"}
                 </button>
                 <button
                   type="button"
@@ -85,15 +110,27 @@ export default function DeleteProductForm({
                   Cancel
                 </button>
               </div>
+              {error && (
+                <p className="text-xs text-red-500" aria-live="polite">
+                  {error}
+                </p>
+              )}
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={handleRequestDelete}
-              className="w-full rounded-md border border-red-500/50 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-500/10 dark:text-red-500"
-            >
-              Delete Product
-            </button>
+            <div className="flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={handleRequestDelete}
+                className="w-full rounded-md border border-red-500/50 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-500/10 dark:text-red-500"
+              >
+                Delete Product
+              </button>
+              {error && (
+                <p className="text-xs text-red-500" aria-live="polite">
+                  {error}
+                </p>
+              )}
+            </div>
           )}
         </div>
       </Card>

@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Card from "./Card";
+import { updateCategory } from "@/lib/api";
+import { useAuth } from "@/lib/useAuth";
 import type { Category } from "@/lib/types";
 
 interface FormValues {
@@ -41,11 +44,15 @@ export default function EditCategoryForm({
   onSubmit,
   onCancel,
 }: EditCategoryFormProps) {
+  const { token } = useAuth();
+  const router = useRouter();
   const [values, setValues] = useState<FormValues>(() =>
     toFormValues(category),
   );
   const [errors, setErrors] = useState<FormErrors>({});
   const [saved, setSaved] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   // Reset the form during render when a different category is passed in,
   // instead of synchronising with an effect.
@@ -55,6 +62,7 @@ export default function EditCategoryForm({
     setValues(toFormValues(category));
     setErrors({});
     setSaved(false);
+    setSubmitError(null);
   }
 
   function handleChange(
@@ -65,8 +73,9 @@ export default function EditCategoryForm({
     setSaved(false);
   }
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setSubmitError(null);
 
     const nextErrors = validate(values);
     setErrors(nextErrors);
@@ -74,15 +83,32 @@ export default function EditCategoryForm({
       return;
     }
 
-    const updatedCategory: Category = {
-      ...category,
-      name: values.name.trim(),
-      description: values.description.trim() || undefined,
-    };
+    if (!token) {
+      setSubmitError("You must be signed in.");
+      return;
+    }
 
-    onSubmit?.(updatedCategory);
-    setErrors({});
-    setSaved(true);
+    setSubmitting(true);
+    try {
+      const updatedCategory = await updateCategory(
+        category.id,
+        {
+          name: values.name.trim(),
+          description: values.description.trim() || undefined,
+        },
+        token,
+      );
+      onSubmit?.(updatedCategory);
+      setErrors({});
+      setSaved(true);
+      router.refresh();
+    } catch (err) {
+      setSubmitError(
+        err instanceof Error ? err.message : "Failed to update category",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -124,6 +150,12 @@ export default function EditCategoryForm({
             />
           </div>
 
+          {submitError && (
+            <p className="text-xs text-red-500" aria-live="polite">
+              {submitError}
+            </p>
+          )}
+
           {saved && (
             <p className="text-xs text-green-600" aria-live="polite">
               Changes saved.
@@ -133,9 +165,10 @@ export default function EditCategoryForm({
           <div className="flex gap-3">
             <button
               type="submit"
-              className="flex-1 rounded-md bg-foreground px-4 py-2 text-sm font-semibold text-background hover:opacity-90"
+              disabled={submitting}
+              className="flex-1 rounded-md bg-foreground px-4 py-2 text-sm font-semibold text-background hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Save Changes
+              {submitting ? "Saving…" : "Save Changes"}
             </button>
             {onCancel && (
               <button

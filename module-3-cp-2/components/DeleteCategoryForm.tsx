@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Card from "./Card";
+import { deleteCategory } from "@/lib/api";
+import { useAuth } from "@/lib/useAuth";
 import type { Category } from "@/lib/types";
 
 interface DeleteCategoryFormProps {
@@ -15,14 +18,19 @@ export default function DeleteCategoryForm({
   onDelete,
   onCancel,
 }: DeleteCategoryFormProps) {
+  const { token } = useAuth();
+  const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [deleted, setDeleted] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [currentId, setCurrentId] = useState(category.id);
   if (category.id !== currentId) {
     setCurrentId(category.id);
     setConfirming(false);
     setDeleted(false);
+    setError(null);
   }
 
   function handleRequestDelete() {
@@ -34,10 +42,26 @@ export default function DeleteCategoryForm({
     onCancel?.();
   }
 
-  function handleConfirmDelete() {
-    onDelete?.(category);
-    setConfirming(false);
-    setDeleted(true);
+  async function handleConfirmDelete() {
+    setError(null);
+
+    if (!token) {
+      setError("You must be signed in.");
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      await deleteCategory(category.id, token);
+      onDelete?.(category);
+      setDeleted(true);
+      router.push("/dashboard/categories");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Delete failed");
+      setConfirming(false);
+    } finally {
+      setDeleting(false);
+    }
   }
 
   return (
@@ -73,9 +97,10 @@ export default function DeleteCategoryForm({
                 <button
                   type="button"
                   onClick={handleConfirmDelete}
-                  className="flex-1 rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+                  disabled={deleting}
+                  className="flex-1 rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Yes, delete
+                  {deleting ? "Deleting…" : "Yes, delete"}
                 </button>
                 <button
                   type="button"
@@ -85,15 +110,27 @@ export default function DeleteCategoryForm({
                   Cancel
                 </button>
               </div>
+              {error && (
+                <p className="text-xs text-red-500" aria-live="polite">
+                  {error}
+                </p>
+              )}
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={handleRequestDelete}
-              className="w-full rounded-md border border-red-500/50 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-500/10 dark:text-red-500"
-            >
-              Delete Category
-            </button>
+            <div className="flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={handleRequestDelete}
+                className="w-full rounded-md border border-red-500/50 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-500/10 dark:text-red-500"
+              >
+                Delete Category
+              </button>
+              {error && (
+                <p className="text-xs text-red-500" aria-live="polite">
+                  {error}
+                </p>
+              )}
+            </div>
           )}
         </div>
       </Card>
