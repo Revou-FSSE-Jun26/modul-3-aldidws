@@ -77,4 +77,22 @@ test.describe('Register page', () => {
     await page.getByRole('main').getByRole('link', { name: 'Login' }).click();
     await expect(page).toHaveURL(/\/auth\/login/);
   });
+
+  test('registering a new user logs them in', async ({ page }) => {
+    await page.goto('/auth/register');
+    await page.locator('#name').fill('New Customer');
+    await page.locator('#email').fill(`new-${Date.now()}@example.com`);
+    await page.locator('#password').fill('password123');
+    await page.locator('#confirmPassword').fill('password123');
+    await page.getByRole('button', { name: 'Sign Up' }).click();
+
+    // Leaves the register page and lands logged in (customer -> home).
+    await expect(page).not.toHaveURL(/\/auth\/register/);
+    // Reload so the header re-reads the persisted session and shows the
+    // authenticated controls (a Logout button replaces the Login link).
+    await page.reload();
+    await expect(
+      page.getByRole('button', { name: 'Logout' }),
+    ).toBeVisible();
+  });
 });

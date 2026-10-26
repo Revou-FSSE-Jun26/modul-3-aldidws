@@ -54,6 +54,23 @@ function str(value) {
   return typeof value === 'string' ? value : '';
 }
 
+/**
+ * Resolve the bearer user and enforce an admin role for write handlers.
+ * Returns the admin user, or null after sending a 401/403 response.
+ */
+function requireAdmin(req, res) {
+  const user = bearer(req);
+  if (!user) {
+    send(res, 401, { message: 'Unauthorized.' });
+    return null;
+  }
+  if (user.role !== 'admin') {
+    send(res, 403, { message: 'Admin access required.' });
+    return null;
+  }
+  return user;
+}
+
 const server = createServer(async (req, res) => {
   const method = req.method ?? 'GET';
   const url = new URL(req.url ?? '/', `http://localhost:${PORT}`);
@@ -76,6 +93,70 @@ const server = createServer(async (req, res) => {
     send(res, 200, { products: state.products });
     return;
   }
+  if (method === 'POST' && path === '/products') {
+    const admin = requireAdmin(req, res);
+    if (!admin) return;
+    const body = await readJson(req);
+    const product = {
+      id: `prod-${state.products.length + 1}-${Date.now().toString(36)}`,
+      name: str(body.name),
+      description: str(body.description) || null,
+      price: body.price ?? 0,
+      stock: Number(body.stock ?? 0),
+      category_name: str(body.category_name) || null,
+      image_url: null,
+    };
+    state.products.push(product);
+    send(res, 201, { product });
+    return;
+  }
+  if (
+    (method === 'PUT' || method === 'PATCH') &&
+    path.startsWith('/products/')
+  ) {
+    const admin = requireAdmin(req, res);
+    if (!admin) return;
+    const id = decodeURIComponent(path.slice('/products/'.length));
+    const product = state.products.find((p) => p.id === id);
+    if (!product) {
+      send(res, 404, { message: 'Product not found.' });
+      return;
+    }
+    const body = await readJson(req);
+    if (body.name !== undefined) product.name = str(body.name);
+    if (body.description !== undefined)
+      product.description = str(body.description) || null;
+    if (body.price !== undefined) product.price = body.price;
+    if (body.stock !== undefined) product.stock = Number(body.stock);
+    if (body.category_name !== undefined)
+      product.category_name = str(body.category_name) || null;
+    send(res, 200, { product });
+    return;
+  }
+  if (method === 'DELETE' && path.startsWith('/products/')) {
+    const admin = requireAdmin(req, res);
+    if (!admin) return;
+    const id = decodeURIComponent(path.slice('/products/'.length));
+    const index = state.products.findIndex((p) => p.id === id);
+    if (index === -1) {
+      send(res, 404, { message: 'Product not found.' });
+      return;
+    }
+    const hasActiveOrder = state.orders.some(
+      (order) =>
+        order.status !== 'completed' &&
+        (order.items ?? []).some((item) => item.product_id === id),
+    );
+    if (hasActiveOrder) {
+      send(res, 409, {
+        message: 'This product has active orders and cannot be deleted.',
+      });
+      return;
+    }
+    state.products.splice(index, 1);
+    send(res, 200, { message: 'Product deleted.' });
+    return;
+  }
   if (method === 'GET' && path.startsWith('/products/')) {
     const id = decodeURIComponent(path.slice('/products/'.length));
     const product = state.products.find((p) => p.id === id);
@@ -90,6 +171,51 @@ const server = createServer(async (req, res) => {
   // --- Categories --------------------------------------------------------
   if (method === 'GET' && path === '/categories') {
     send(res, 200, { categories: state.categories });
+    return;
+  }
+  if (method === 'POST' && path === '/categories') {
+    const admin = requireAdmin(req, res);
+    if (!admin) return;
+    const body = await readJson(req);
+    const category = {
+      id: `cat-${state.categories.length + 1}-${Date.now().toString(36)}`,
+      name: str(body.name),
+      description: str(body.description) || null,
+    };
+    state.categories.push(category);
+    send(res, 201, { category });
+    return;
+  }
+  if (
+    (method === 'PUT' || method === 'PATCH') &&
+    path.startsWith('/categories/')
+  ) {
+    const admin = requireAdmin(req, res);
+    if (!admin) return;
+    const id = decodeURIComponent(path.slice('/categories/'.length));
+    const category = state.categories.find((c) => c.id === id);
+    if (!category) {
+      send(res, 404, { message: 'Category not found.' });
+      return;
+    }
+    const body = await readJson(req);
+    if (body.name !== undefined) category.name = str(body.name);
+    if (body.description !== undefined)
+      category.description = str(body.description) || null;
+    send(res, 200, { category });
+    return;
+  }
+  if (method === 'DELETE' && path.startsWith('/categories/')) {
+    const admin = requireAdmin(req, res);
+    if (!admin) return;
+    const id = decodeURIComponent(path.slice('/categories/'.length));
+    const index = state.categories.findIndex((c) => c.id === id);
+    if (index === -1) {
+      send(res, 404, { message: 'Category not found.' });
+      return;
+    }
+    state.categories.splice(index, 1);
+    send(res, 200, { message: 'Category deleted.' });
     return;
   }
   if (method === 'GET' && path.startsWith('/categories/')) {

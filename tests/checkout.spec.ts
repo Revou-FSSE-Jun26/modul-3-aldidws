@@ -89,4 +89,34 @@ test.describe('Checkout', () => {
     await page.getByRole('link', { name: /Back to cart/ }).click();
     await expect(page).toHaveURL(/\/cart/);
   });
+
+  test('a logged-in customer can place an order', async ({ page }) => {
+    // Log in as the mock customer.
+    await page.goto('/auth/login');
+    await page.locator('#email').fill('customer@example.com');
+    await page.locator('#password').fill('customer12345');
+    await page.getByRole('button', { name: 'Login' }).click();
+    await expect(page).not.toHaveURL(/\/auth\/login/);
+
+    // Add a product to the cart.
+    await page.goto('/products');
+    await page.getByRole('button', { name: /^Add to Cart/ }).first().click();
+
+    // Fill the shipping form and place the order.
+    await page.goto('/checkout');
+    await page.locator('#recipient_name').fill('Budi Santoso');
+    await page.locator('#recipient_phone').fill('081234567890');
+    await page.locator('#shipping_address').fill('Jl. Mawar No. 1');
+    await page.locator('#shipping_city').fill('Jakarta');
+    await page.locator('#shipping_province').fill('DKI Jakarta');
+    await page.locator('#shipping_postal_code').fill('12345');
+    await page.getByRole('button', { name: 'Place order' }).click();
+
+    // Lands on the orders page with the newly created order visible.
+    await expect(page).toHaveURL(/\/orders/);
+    await expect(
+      page.getByRole('heading', { name: 'Orders' }),
+    ).toBeVisible();
+    await expect(page.getByText(/Orders #order-/).first()).toBeVisible();
+  });
 });
