@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { fillStable, gotoHydrated } from './helpers';
 
 test.describe('Login page', () => {
   test('renders the login form', async ({ page }) => {
@@ -21,8 +22,8 @@ test.describe('Login page', () => {
   test('invalid credentials surface an error without navigating', async ({
     page,
   }) => {
-    await page.goto('/auth/login');
-    await page.locator('#email').fill('nobody@example.com');
+    await gotoHydrated(page, '/auth/login');
+    await fillStable(page, '#email', 'nobody@example.com');
     await page.locator('#password').fill('wrongpassword');
     await page.getByRole('button', { name: 'Login' }).click();
 
@@ -45,8 +46,8 @@ test.describe('Register page', () => {
   });
 
   test('rejects a password shorter than 8 characters', async ({ page }) => {
-    await page.goto('/auth/register');
-    await page.locator('#name').fill('Test User');
+    await gotoHydrated(page, '/auth/register');
+    await fillStable(page, '#name', 'Test User');
     await page.locator('#email').fill('test@example.com');
     await page.locator('#password').fill('short');
     await page.locator('#confirmPassword').fill('short');
@@ -58,8 +59,8 @@ test.describe('Register page', () => {
   });
 
   test('rejects mismatched passwords', async ({ page }) => {
-    await page.goto('/auth/register');
-    await page.locator('#name').fill('Test User');
+    await gotoHydrated(page, '/auth/register');
+    await fillStable(page, '#name', 'Test User');
     await page.locator('#email').fill('test@example.com');
     await page.locator('#password').fill('password123');
     await page.locator('#confirmPassword').fill('password456');
@@ -79,8 +80,8 @@ test.describe('Register page', () => {
   });
 
   test('registering a new user logs them in', async ({ page }) => {
-    await page.goto('/auth/register');
-    await page.locator('#name').fill('New Customer');
+    await gotoHydrated(page, '/auth/register');
+    await fillStable(page, '#name', 'New Customer');
     await page.locator('#email').fill(`new-${Date.now()}@example.com`);
     await page.locator('#password').fill('password123');
     await page.locator('#confirmPassword').fill('password123');

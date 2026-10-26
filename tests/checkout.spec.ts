@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { fillStable, gotoHydrated } from './helpers';
 
 test.describe('Checkout', () => {
   test('empty cart shows the "nothing to check out" prompt', async ({
@@ -92,8 +93,8 @@ test.describe('Checkout', () => {
 
   test('a logged-in customer can place an order', async ({ page }) => {
     // Log in as the mock customer.
-    await page.goto('/auth/login');
-    await page.locator('#email').fill('customer@example.com');
+    await gotoHydrated(page, '/auth/login');
+    await fillStable(page, '#email', 'customer@example.com');
     await page.locator('#password').fill('customer12345');
     await page.getByRole('button', { name: 'Login' }).click();
     await expect(page).not.toHaveURL(/\/auth\/login/);
@@ -103,8 +104,8 @@ test.describe('Checkout', () => {
     await page.getByRole('button', { name: /^Add to Cart/ }).first().click();
 
     // Fill the shipping form and place the order.
-    await page.goto('/checkout');
-    await page.locator('#recipient_name').fill('Budi Santoso');
+    await gotoHydrated(page, '/checkout');
+    await fillStable(page, '#recipient_name', 'Budi Santoso');
     await page.locator('#recipient_phone').fill('081234567890');
     await page.locator('#shipping_address').fill('Jl. Mawar No. 1');
     await page.locator('#shipping_city').fill('Jakarta');

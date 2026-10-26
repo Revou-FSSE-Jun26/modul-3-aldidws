@@ -1,8 +1,9 @@
 import { test, expect, type Page } from '@playwright/test';
+import { fillStable, gotoHydrated } from './helpers';
 
 async function loginAsAdmin(page: Page) {
-  await page.goto('/auth/login');
-  await page.locator('#email').fill('admin@example.com');
+  await gotoHydrated(page, '/auth/login');
+  await fillStable(page, '#email', 'admin@example.com');
   await page.locator('#password').fill('admin12345');
   await page.getByRole('button', { name: 'Login' }).click();
   await expect(page).toHaveURL(/\/dashboard/);
@@ -11,11 +12,11 @@ async function loginAsAdmin(page: Page) {
 test.describe('Admin dashboard products', () => {
   test('admin can create, edit and delete a product', async ({ page }) => {
     await loginAsAdmin(page);
-    await page.goto('/dashboard/products');
+    await gotoHydrated(page, '/dashboard/products');
 
     // --- Create -----------------------------------------------------------
     const name = `E2E Widget ${Date.now()}`;
-    await page.locator('#name').fill(name);
+    await fillStable(page, '#name', name);
     await page.locator('#price').fill('99000');
     await page.locator('#stock').fill('7');
     await page.getByRole('button', { name: 'Save Product' }).click();
@@ -31,11 +32,11 @@ test.describe('Admin dashboard products', () => {
     expect(id).toBeTruthy();
 
     // --- Edit -------------------------------------------------------------
-    await page.goto(`/dashboard/products/${id}`);
+    await gotoHydrated(page, `/dashboard/products/${id}`);
     await expect(
       page.getByRole('heading', { name: 'Edit Product' }),
     ).toBeVisible();
-    await page.locator('#price').fill('123000');
+    await fillStable(page, '#price', '123000');
     await page.getByRole('button', { name: 'Save Changes' }).click();
     await expect(page.getByText('Changes saved.')).toBeVisible();
     // The new price is reflected in the product preview card.
