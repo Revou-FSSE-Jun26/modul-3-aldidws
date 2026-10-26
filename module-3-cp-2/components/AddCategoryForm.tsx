@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import Card from "./Card";
 import { createCategory } from "@/lib/api";
 import { useAuth } from "@/lib/useAuth";
@@ -71,11 +72,13 @@ export default function AddCategoryForm() {
       );
       setValues(EMPTY_FORM);
       setErrors({});
+      toast.success("Category created");
       router.refresh();
     } catch (err) {
-      setSubmitError(
-        err instanceof Error ? err.message : "Failed to create category",
-      );
+      const message =
+        err instanceof Error ? err.message : "Failed to create category";
+      setSubmitError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }

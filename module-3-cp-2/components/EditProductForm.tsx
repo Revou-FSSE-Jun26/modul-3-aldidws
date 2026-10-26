@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import Card from "./Card";
 import { updateProduct } from "@/lib/api";
 import { useAuth } from "@/lib/useAuth";
@@ -123,11 +124,13 @@ export default function EditProductForm({
       onSubmit?.(updatedProduct);
       setErrors({});
       setSaved(true);
+      toast.success("Product updated");
       router.refresh();
     } catch (err) {
-      setSubmitError(
-        err instanceof Error ? err.message : "Failed to update product",
-      );
+      const message =
+        err instanceof Error ? err.message : "Failed to update product";
+      setSubmitError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import Card from "./Card";
 import { deleteCategory } from "@/lib/api";
 import { useAuth } from "@/lib/useAuth";
@@ -55,9 +56,12 @@ export default function DeleteCategoryForm({
       await deleteCategory(category.id, token);
       onDelete?.(category);
       setDeleted(true);
+      toast.success("Category deleted");
       router.push("/dashboard/categories");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Delete failed");
+      const message = err instanceof Error ? err.message : "Delete failed";
+      setError(message);
+      toast.error(message);
       setConfirming(false);
     } finally {
       setDeleting(false);

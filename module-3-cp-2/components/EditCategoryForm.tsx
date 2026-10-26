@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import Card from "./Card";
 import { updateCategory } from "@/lib/api";
 import { useAuth } from "@/lib/useAuth";
@@ -101,11 +102,13 @@ export default function EditCategoryForm({
       onSubmit?.(updatedCategory);
       setErrors({});
       setSaved(true);
+      toast.success("Category updated");
       router.refresh();
     } catch (err) {
-      setSubmitError(
-        err instanceof Error ? err.message : "Failed to update category",
-      );
+      const message =
+        err instanceof Error ? err.message : "Failed to update category";
+      setSubmitError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }

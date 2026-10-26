@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import Card from "./Card";
 import { deleteProduct } from "@/lib/api";
 import { useAuth } from "@/lib/useAuth";
@@ -55,9 +56,12 @@ export default function DeleteProductForm({
       await deleteProduct(product.id, token);
       onDelete?.(product);
       setDeleted(true);
+      toast.success("Product deleted");
       router.push("/dashboard/products");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Delete failed");
+      const message = err instanceof Error ? err.message : "Delete failed";
+      setError(message);
+      toast.error(message);
       setConfirming(false);
     } finally {
       setDeleting(false);

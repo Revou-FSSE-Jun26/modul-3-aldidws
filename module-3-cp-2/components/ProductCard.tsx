@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import toast from "react-hot-toast";
 import Card from "./Card";
 import { useCart } from "@/lib/cart";
 
@@ -37,6 +38,7 @@ export default function ProductCard({
 
   function handleAddToCart() {
     addItem({ id, name, price }, quantity);
+    toast.success(`${name} added to cart`);
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   }

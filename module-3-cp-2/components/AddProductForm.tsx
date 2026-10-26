@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import Card from "./Card";
 import { createProduct } from "@/lib/api";
 import { useAuth } from "@/lib/useAuth";
@@ -93,11 +94,13 @@ export default function AddProductForm() {
       );
       setValues(EMPTY_FORM);
       setErrors({});
+      toast.success("Product created");
       router.refresh();
     } catch (err) {
-      setSubmitError(
-        err instanceof Error ? err.message : "Failed to create product",
-      );
+      const message =
+        err instanceof Error ? err.message : "Failed to create product";
+      setSubmitError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
