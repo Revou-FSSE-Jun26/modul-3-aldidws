@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Card from "@/components/Card";
 import ErrorState from "@/components/ErrorState";
 import { getAdminOrders } from "@/lib/api";
 import { useAuth } from "@/lib/useAuth";
@@ -12,6 +11,19 @@ const rupiahFormatter = new Intl.NumberFormat("id-ID");
 
 function formatRupiah(value: number): string {
   return `Rp ${rupiahFormatter.format(value)}`;
+}
+
+const STATUS_STYLES: Record<string, string> = {
+  pending: "bg-amber-100 text-amber-700",
+  processing: "bg-blue-100 text-blue-700",
+  shipped: "bg-indigo-100 text-indigo-700",
+  delivered: "bg-emerald-100 text-emerald-700",
+  completed: "bg-emerald-100 text-emerald-700",
+  cancelled: "bg-red-100 text-red-600",
+};
+
+function statusStyle(status: string): string {
+  return STATUS_STYLES[status.toLowerCase()] ?? "bg-foreground/10 text-foreground/70";
 }
 
 export default function DashboardOrdersPage() {
@@ -33,9 +45,7 @@ export default function DashboardOrdersPage() {
         if (!cancelled) setOrders(data);
       } catch (err) {
         if (!cancelled) {
-          setError(
-            err instanceof Error ? err.message : "Failed to load orders.",
-          );
+          setError(err instanceof Error ? err.message : "Failed to load orders.");
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -44,25 +54,22 @@ export default function DashboardOrdersPage() {
 
     void load(token);
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [token]);
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-bold tracking-tight">Orders</h1>
-        <p className="text-sm text-foreground/60">
-          Customer orders with recipient and shipping details.
-        </p>
+        {orders && (
+          <p className="text-sm text-foreground/50">
+            {orders.length} order{orders.length !== 1 ? "s" : ""} total
+          </p>
+        )}
       </div>
 
       {loading ? (
-        <p
-          className="py-10 text-center text-sm text-foreground/60"
-          aria-live="polite"
-        >
+        <p className="py-10 text-center text-sm text-foreground/60" aria-live="polite">
           Loading orders…
         </p>
       ) : error ? (
@@ -72,78 +79,36 @@ export default function DashboardOrdersPage() {
           detail={error}
         />
       ) : !orders || orders.length === 0 ? (
-        <Card className="py-8 text-center text-sm text-foreground/60">
+        <p className="rounded-lg border border-black/10 px-4 py-8 text-center text-foreground/60 dark:border-white/15">
           No orders yet.
-        </Card>
+        </p>
       ) : (
-        <Card className="overflow-x-auto p-0">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-black/10 text-foreground/60 dark:border-white/15">
-              <tr>
-                <th className="px-4 py-3 font-medium">Order</th>
-                <th className="px-4 py-3 font-medium">Recipient</th>
-                <th className="px-4 py-3 font-medium">Phone</th>
-                <th className="px-4 py-3 font-medium">Shipping address</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 text-right font-medium">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((order) => {
-                const cityLine = [order.shippingCity, order.shippingProvince]
-                  .filter(Boolean)
-                  .join(", ");
-                return (
-                  <tr
-                    key={order.id}
-                    className="border-b border-black/5 align-top last:border-0 dark:border-white/10"
-                  >
-                    <td className="px-4 py-3">
-                      <Link
-                        href={`/dashboard/orders/${order.id}`}
-                        className="font-mono font-medium hover:underline"
-                      >
-                        #{order.id}
-                      </Link>
-                      {order.orderNumber && (
-                        <div className="text-xs text-foreground/50">
-                          {order.orderNumber}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {order.recipientName ?? "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      {order.recipientPhone ?? "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="max-w-xs">
-                        <div>{order.shippingAddress ?? "—"}</div>
-                        {cityLine && (
-                          <div className="text-xs text-foreground/50">
-                            {cityLine}
-                            {order.shippingPostalCode
-                              ? ` ${order.shippingPostalCode}`
-                              : ""}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-xs font-medium capitalize">
-                        {order.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right font-semibold">
-                      {formatRupiah(order.total)}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </Card>
+        <ul className="flex flex-col gap-3">
+          {orders.map((order) => (
+            <li key={order.id}>
+              <Link
+                href={`/dashboard/orders/${order.id}`}
+                className="group block rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40"
+              >
+                <div className="flex items-center justify-between rounded-xl border border-slate-200 bg-background p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-slate-700">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="font-semibold">Order #{order.id}</span>
+                    {order.orderNumber && (
+                      <span className="text-xs text-foreground/50">{order.orderNumber}</span>
+                    )}
+                    <span className="px-5 py-3 font-medium text-slate-800">{order.customerName}</span>
+                  </div>
+                  <div className="flex flex-col items-end gap-1.5">
+                    <span className="font-bold">{formatRupiah(order.total)}</span>
+                    <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${statusStyle(order.status)}`}>
+                      {order.status}
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );

@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import Card from "@/components/Card";
 import ErrorState from "@/components/ErrorState";
 import { getOrder } from "@/lib/api";
 import { useAuth } from "@/lib/useAuth";
@@ -15,15 +14,16 @@ function formatRupiah(value: number): string {
   return `Rp ${rupiahFormatter.format(value)}`;
 }
 
-function DetailRow({ label, value }: { label: string; value?: string }) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      <span className="text-xs uppercase tracking-wide text-foreground/50">
-        {label}
-      </span>
-      <span className="text-sm">{value && value.trim() ? value : "—"}</span>
-    </div>
-  );
+const STATUS_STYLES: Record<string, string> = {
+  pending:   "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400",
+  paid:      "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400",
+  shipped:   "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400",
+  delivered: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400",
+  cancelled: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400",
+};
+
+function statusStyle(status: string): string {
+  return STATUS_STYLES[status.toLowerCase()] ?? "bg-foreground/10 text-foreground/70";
 }
 
 export default function DashboardOrderDetailPage() {
@@ -55,9 +55,7 @@ export default function DashboardOrderDetailPage() {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(
-            err instanceof Error ? err.message : "Failed to load order.",
-          );
+          setError(err instanceof Error ? err.message : "Failed to load order.");
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -66,16 +64,8 @@ export default function DashboardOrderDetailPage() {
 
     void load(token);
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [token, orderId]);
-
-  const cityLine = order
-    ? [order.shippingCity, order.shippingProvince, order.shippingPostalCode]
-        .filter(Boolean)
-        .join(", ")
-    : "";
 
   return (
     <div className="flex flex-col gap-6">
@@ -88,18 +78,10 @@ export default function DashboardOrderDetailPage() {
 
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-bold tracking-tight">Order #{orderId}</h1>
-        {order?.orderNumber && (
-          <span className="text-sm text-foreground/60">
-            {order.orderNumber}
-          </span>
-        )}
       </div>
 
       {loading ? (
-        <p
-          className="py-10 text-center text-sm text-foreground/60"
-          aria-live="polite"
-        >
+        <p className="py-10 text-center text-sm text-foreground/60" aria-live="polite">
           Loading order…
         </p>
       ) : error ? (
@@ -114,72 +96,74 @@ export default function DashboardOrderDetailPage() {
           message="This order does not exist or you do not have access to it."
         />
       ) : (
-        <div className="flex flex-col gap-4">
-          <Card className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold">{order.customerName}</span>
-              <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-xs font-medium capitalize">
-                {order.status}
-              </span>
-            </div>
-            {order.createdAt && (
-              <span className="text-sm text-foreground/60">
-                Placed on {new Date(order.createdAt).toLocaleString("id-ID")}
-              </span>
-            )}
-            <div className="flex items-center justify-between border-t border-black/10 pt-3 dark:border-white/15">
-              <span className="text-sm text-foreground/60">Total</span>
-              <span className="text-lg font-bold">
-                {formatRupiah(order.total)}
-              </span>
-            </div>
-          </Card>
+        <div className="flex flex-col gap-6">
+          {/* Order summary card */}
+          <section className="rounded-xl border border-slate-200 bg-background p-5 shadow-sm dark:border-slate-700">
+            <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-foreground/40">
+              Order Summary
+            </h2>
 
-          <Card className="flex flex-col gap-4">
-            <h2 className="text-lg font-semibold">Recipient &amp; shipping</h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <DetailRow label="Recipient name" value={order.recipientName} />
-              <DetailRow label="Recipient phone" value={order.recipientPhone} />
-              <div className="sm:col-span-2">
-                <DetailRow
-                  label="Shipping address"
-                  value={order.shippingAddress}
-                />
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-foreground/60">Customer</span>
+                <span className="font-semibold">{order.customerName}</span>
               </div>
-              {cityLine && (
-                <div className="sm:col-span-2">
-                  <DetailRow label="City / province / postal" value={cityLine} />
-                </div>
-              )}
-              {order.customerNote && (
-                <div className="sm:col-span-2">
-                  <DetailRow label="Customer note" value={order.customerNote} />
-                </div>
-              )}
-            </div>
-          </Card>
 
+              {order.orderNumber && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-foreground/60">Order number</span>
+                  <span className="text-sm font-medium">{order.orderNumber}</span>
+                </div>
+              )}
+
+              {order.createdAt && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-foreground/60">Placed on</span>
+                  <span className="text-sm">
+                    {new Date(order.createdAt).toLocaleString("id-ID")}
+                  </span>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-foreground/60">Status</span>
+                <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${statusStyle(order.status)}`}>
+                  {order.status}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between border-t border-black/10 pt-3 dark:border-white/15">
+                <span className="text-sm text-foreground/60">Total</span>
+                <span className="text-lg font-bold">{formatRupiah(order.total)}</span>
+              </div>
+            </div>
+          </section>
+
+          {/* Order items */}
           {order.items && order.items.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <h2 className="text-lg font-semibold">Items</h2>
+            <section className="flex flex-col gap-3">
+              <h2 className="text-xs font-bold uppercase tracking-widest text-foreground/40">
+                Items
+              </h2>
               <ul className="flex flex-col gap-2">
                 {order.items.map((item) => (
-                  <li key={item.productId}>
-                    <Card className="flex items-center justify-between">
-                      <div className="flex flex-col">
-                        <span className="font-medium">{item.productName}</span>
-                        <span className="text-sm text-foreground/60">
-                          {item.quantity} &times; {formatRupiah(item.price)}
-                        </span>
-                      </div>
-                      <span className="font-semibold">
-                        {formatRupiah(item.price * item.quantity)}
+                  <li
+                    key={item.productId}
+                    className="flex items-center justify-between rounded-xl border border-slate-200 bg-background p-4 shadow-sm dark:border-slate-700"
+                  >
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-medium">{item.productName}</span>
+                      <span className="text-sm text-foreground/60">
+                        {item.quantity} &times; {formatRupiah(item.price)}
                       </span>
-                    </Card>
+                    </div>
+                    <span className="font-semibold">
+                      {formatRupiah(item.price * item.quantity)}
+                    </span>
                   </li>
                 ))}
               </ul>
-            </div>
+            </section>
           )}
         </div>
       )}

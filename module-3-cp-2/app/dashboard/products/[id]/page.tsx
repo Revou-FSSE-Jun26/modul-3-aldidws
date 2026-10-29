@@ -3,8 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getProduct } from "@/lib/api";
 import ProductCard from "@/components/ProductCard";
-import EditProductForm from "@/components/EditProductForm";
-import DeleteProductForm from "@/components/DeleteProductForm";
+import ProductEditSection from "@/components/ProductEditSection";
 
 export async function generateMetadata({
   params,
@@ -54,13 +53,10 @@ export default async function ProductDetailPage({
           price={product.price}
           stock={product.stock}
           description={product.description}
-          linkToDetail={false}
         />
-        </div>
-        <section className="mt-6 flex flex-col gap-6 border-t border-black/10 pt-6 dark:border-white/15">
-        <EditProductForm product={product} />
-        <DeleteProductForm product={product} />
-        </section>
+      </div>
+
+      <ProductEditSection product={product} />
     </div>
   );
 }

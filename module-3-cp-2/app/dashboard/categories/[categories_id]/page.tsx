@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getCategory } from "@/lib/api";
-import Card from "@/components/Card";
 import EditCategoryForm from "@/components/EditCategoryForm";
 import DeleteCategoryForm from "@/components/DeleteCategoryForm";
 
@@ -35,6 +34,7 @@ export default async function DashboardCategoryDetailPage({
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Back link */}
       <Link
         href="/dashboard/categories"
         className="text-sm text-foreground/60 hover:underline"
@@ -42,29 +42,30 @@ export default async function DashboardCategoryDetailPage({
         &larr; Back to categories
       </Link>
 
+      {/* Page header */}
       <div className="flex flex-col gap-2">
-        <h2 className="text-2xl font-bold tracking-tight">{category.name}</h2>
+        <h1 className="text-2xl font-bold tracking-tight">{category.name}</h1>
+        <div className="flex flex-wrap items-center gap-2">
+          {typeof category.productCount === "number" && (
+            <span className="w-fit rounded-full bg-foreground/10 px-3 py-1 text-xs font-medium">
+              {category.productCount} product{category.productCount !== 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
         <p className="text-foreground/70">
-          {category.description ?? "There is no description for this category."}
+          {category.description ?? "No description for this category."}
         </p>
       </div>
 
-      <Card className="flex flex-col gap-1">
-        <h2 className="text-base font-semibold">{category.name}</h2>
-        {category.description && (
-          <p className="text-sm text-foreground/60">{category.description}</p>
-        )}
-        {typeof category.productCount === "number" && (
-          <span className="text-xs text-foreground/50">
-            {category.productCount} product in this category
-          </span>
-        )}
-      </Card>
-
-      <section className="mt-6 flex flex-col gap-6 border-t border-black/10 pt-6 dark:border-white/15">
-        <EditCategoryForm category={category} />
-        <DeleteCategoryForm category={category} />
-      </section>
+      {/* Forms */}
+      <div className="flex flex-col gap-8">
+        <section className="mt-6 flex flex-col border-t border-black/10 pt-6 dark:border-white/15">
+          <EditCategoryForm category={category} />
+          <div className="mt-16 border-t border-black/10 pt-10 dark:border-white/15">
+            <DeleteCategoryForm category={category} />
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

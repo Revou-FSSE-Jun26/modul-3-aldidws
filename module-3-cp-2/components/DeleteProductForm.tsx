@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import Card from "./Card";
 import { deleteProduct } from "@/lib/api";
 import { useAuth } from "@/lib/useAuth";
 import type { Product } from "@/lib/types";
@@ -69,75 +68,95 @@ export default function DeleteProductForm({
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <Card className="border-red-500/30">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-lg font-semibold text-red-600 dark:text-red-500">
-              Delete Product
-            </h2>
-            <p className="text-sm text-foreground/70">
-              Permanently remove{" "}
-              <span className="font-medium text-foreground">
-                {product.name}
-              </span>{" "}
-              from the catalog. This action cannot be undone.
-            </p>
-          </div>
+    <div className="flex flex-col gap-2">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <div>
+          <h2 className="text-base font-bold text-foreground">Delete Product</h2>
+          <p className="text-xs text-foreground/50">Permanently remove this product from the catalog</p>
+        </div>
+      </div>
 
-          {deleted ? (
-            <p className="text-xs text-green-600" aria-live="polite">
-              Product deleted.
+      {/* Card */}
+      <div className="mt-2 rounded-xl border border-red-300/60 bg-background p-5 shadow-sm dark:border-red-800/50">
+        <h3 className="mb-4 text-xs font-bold uppercase tracking-widest text-foreground/40">
+          Danger Zone
+        </h3>
+
+        <p className="mb-5 text-sm text-foreground/70">
+          You are about to permanently delete{" "}
+          <span className="font-semibold text-foreground">{product.name}</span>.
+          This action <span className="font-semibold text-red-600 dark:text-red-500">cannot be undone</span>.
+        </p>
+
+        {deleted ? (
+          <p className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400" aria-live="polite">
+            <span aria-hidden>✓</span> Product deleted successfully.
+          </p>
+        ) : confirming ? (
+          <div className="flex flex-col gap-4">
+            <p
+              className="flex items-center gap-2 rounded-lg border border-red-300/60 bg-red-50 px-4 py-3 text-sm font-medium text-red-600 dark:border-red-800/50 dark:bg-red-950 dark:text-red-400"
+              aria-live="polite"
+            >
+              <span aria-hidden>⚠</span> Are you sure you want to delete this product?
             </p>
-          ) : confirming ? (
-            <div className="flex flex-col gap-3">
-              <p
-                className="text-sm font-medium text-red-600 dark:text-red-500"
-                aria-live="polite"
-              >
-                Are you sure you want to delete this product?
-              </p>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={handleConfirmDelete}
-                  disabled={deleting}
-                  className="flex-1 rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {deleting ? "Deleting…" : "Yes, delete"}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  className="rounded-md border border-black/15 px-4 py-2 text-sm font-semibold hover:bg-foreground/5 dark:border-white/20"
-                >
-                  Cancel
-                </button>
-              </div>
-              {error && (
-                <p className="text-xs text-red-500" aria-live="polite">
-                  {error}
-                </p>
-              )}
-            </div>
-          ) : (
-            <div className="flex flex-col gap-3">
+            <div className="flex gap-3">
               <button
                 type="button"
-                onClick={handleRequestDelete}
-                className="w-full rounded-md border border-red-500/50 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-500/10 dark:text-red-500"
+                onClick={handleConfirmDelete}
+                disabled={deleting}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-red-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-red-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Delete Product
+                {deleting ? (
+                  <>
+                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden>
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z" />
+                    </svg>
+                    Deleting…
+                  </>
+                ) : (
+                  "Yes, delete product"
+                )}
               </button>
-              {error && (
-                <p className="text-xs text-red-500" aria-live="polite">
-                  {error}
-                </p>
-              )}
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="rounded-xl border border-slate-300 px-4 py-3 text-sm font-semibold transition hover:bg-foreground/5 dark:border-slate-600"
+              >
+                Cancel
+              </button>
             </div>
-          )}
-        </div>
-      </Card>
+            {error && (
+              <div
+                className="flex items-center gap-2 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-700 dark:bg-red-950 dark:text-red-400"
+                role="alert"
+              >
+                <span aria-hidden>⚠</span> {error}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={handleRequestDelete}
+              className="flex w-full items-center justify-center rounded-xl border border-red-400/60 px-6 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-500/10 dark:border-red-700 dark:text-red-500"
+            >
+              Delete Product
+            </button>
+            {error && (
+              <div
+                className="flex items-center gap-2 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-700 dark:bg-red-950 dark:text-red-400"
+                role="alert"
+              >
+                <span aria-hidden>⚠</span> {error}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

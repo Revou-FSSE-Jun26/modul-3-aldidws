@@ -1,17 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import Card from "./Card";
-import { createProduct } from "@/lib/api";
+import { createProduct, getCategories, type ProductFitmentInput } from "@/lib/api";
 import { useAuth } from "@/lib/useAuth";
+import {
+  VEHICLE_DATA,
+  CAR_BRANDS,
+  type VehicleSeries,
+} from "@/components/vehicle-data";
+
+// ---------------------------------------------------------------------------
+// Product form
+// ---------------------------------------------------------------------------
 
 interface FormValues {
   name: string;
   price: string;
   stock: string;
   description: string;
+  sku: string;
+  brand: string;
+  imageUrl: string;
+  category: string;
 }
 
 interface FormErrors {
@@ -25,6 +37,10 @@ const EMPTY_FORM: FormValues = {
   price: "",
   stock: "",
   description: "",
+  sku: "",
+  brand: "",
+  imageUrl: "",
+  category: "",
 };
 
 function validate(values: FormValues): FormErrors {
@@ -51,13 +67,84 @@ function validate(values: FormValues): FormErrors {
   return errors;
 }
 
+// ---------------------------------------------------------------------------
+// Fitment selector state
+// ---------------------------------------------------------------------------
+
+interface FitmentDraft {
+  brand: string;
+  series: string;
+  model: string;
+  engine: string;
+}
+
+const EMPTY_FITMENT: FitmentDraft = {
+  brand: "",
+  series: "",
+  model: "",
+  engine: "",
+};
+
+function fitmentLabel(f: ProductFitmentInput): string {
+  return [f.brand, f.series, f.model, f.engine].filter(Boolean).join(" › ");
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
 export default function AddProductForm() {
   const { token } = useAuth();
   const router = useRouter();
+
+  // Product fields
   const [values, setValues] = useState<FormValues>(EMPTY_FORM);
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Fitment list (confirmed entries)
+  const [fitments, setFitments] = useState<ProductFitmentInput[]>([]);
+  // Ref mirrors fitments state — updated synchronously in every mutator
+  // so handleSubmit always reads the latest value without depending on
+  // useEffect timing.
+  const fitmentsRef = useRef<ProductFitmentInput[]>([]);
+
+  // Fitment draft (the four dropdowns)
+  const [draft, setDraft] = useState<FitmentDraft>(EMPTY_FITMENT);
+  const [fitmentError, setFitmentError] = useState<string | null>(null);
+
+  // Categories
+  const [categories, setCategories] = useState<string[]>([]);
+  const [categoryOpen, setCategoryOpen] = useState(false);
+
+  useEffect(() => {
+    getCategories().then((cats) =>
+      setCategories(cats.map((c) => c.name))
+    );
+  }, []);
+
+  // Dependent options for the draft
+  const seriesOptions = useMemo<VehicleSeries[]>(
+    () => (draft.brand ? (VEHICLE_DATA[draft.brand] ?? []) : []),
+    [draft.brand],
+  );
+
+  const modelOptions = useMemo(
+    () =>
+      seriesOptions.find((s) => s.name === draft.series)?.models ?? [],
+    [seriesOptions, draft.series],
+  );
+
+  const engineOptions = useMemo(
+    () =>
+      modelOptions.find((m) => m.name === draft.model)?.engines ?? [],
+    [modelOptions, draft.model],
+  );
+
+  // -------------------------------------------------------------------------
+  // Handlers — product fields
+  // -------------------------------------------------------------------------
 
   function handleChange(
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -66,15 +153,77 @@ export default function AddProductForm() {
     setValues((prev) => ({ ...prev, [name]: value }));
   }
 
+  // -------------------------------------------------------------------------
+  // Handlers — fitment draft
+  // -------------------------------------------------------------------------
+
+  function handleDraftChange(field: keyof FitmentDraft, value: string) {
+    setFitmentError(null);
+    setDraft((prev) => {
+      const next = { ...prev, [field]: value };
+      // Reset children when a parent changes
+      if (field === "brand") {
+        next.series = "";
+        next.model = "";
+        next.engine = "";
+      } else if (field === "series") {
+        next.model = "";
+        next.engine = "";
+      } else if (field === "model") {
+        next.engine = "";
+      }
+      return next;
+    });
+  }
+
+  function handleAddFitment() {
+    if (!draft.brand) {
+      setFitmentError("Select at least a brand before adding.");
+      return;
+    }
+
+    const entry: ProductFitmentInput = { brand: draft.brand };
+    if (draft.series) entry.series = draft.series;
+    if (draft.model) entry.model = draft.model;
+    if (draft.engine) entry.engine = draft.engine;
+
+    // Prevent exact duplicates
+    const isDuplicate = fitments.some(
+      (f) =>
+        f.brand === entry.brand &&
+        (f.series ?? "") === (entry.series ?? "") &&
+        (f.model ?? "") === (entry.model ?? "") &&
+        (f.engine ?? "") === (entry.engine ?? ""),
+    );
+
+    if (isDuplicate) {
+      setFitmentError("This fitment is already in the list.");
+      return;
+    }
+
+    setFitments((prev) => [...prev, entry]);
+    fitmentsRef.current = [...fitmentsRef.current, entry];
+    setDraft(EMPTY_FITMENT);
+    setFitmentError(null);
+  }
+
+  function handleRemoveFitment(index: number) {
+    const next = fitmentsRef.current.filter((_, i) => i !== index);
+    fitmentsRef.current = next;
+    setFitments(next);
+  }
+
+  // -------------------------------------------------------------------------
+  // Submit
+  // -------------------------------------------------------------------------
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitError(null);
 
     const nextErrors = validate(values);
     setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) {
-      return;
-    }
+    if (Object.keys(nextErrors).length > 0) return;
 
     if (!token) {
       setSubmitError("You must be signed in.");
@@ -89,11 +238,19 @@ export default function AddProductForm() {
           price: Number(values.price),
           stock: Number(values.stock),
           description: values.description.trim() || undefined,
+          sku: values.sku.trim() || undefined,
+          brand: values.brand.trim() || undefined,
+          imageUrl: values.imageUrl.trim() || undefined,
+          category: values.category.trim() || undefined,
+          fitments: fitmentsRef.current,
         },
         token,
       );
       setValues(EMPTY_FORM);
       setErrors({});
+      setFitments([]);
+      fitmentsRef.current = [];
+      setDraft(EMPTY_FITMENT);
       toast.success("Product created");
       router.refresh();
     } catch (err) {
@@ -106,104 +263,429 @@ export default function AddProductForm() {
     }
   }
 
-  return (
-    <div className="flex flex-col gap-6">
-      <Card>
-        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-          <h2 className="text-lg font-semibold">Add Product</h2>
+  // -------------------------------------------------------------------------
+  // Render
+  // -------------------------------------------------------------------------
 
-          <div className="flex flex-col gap-1">
-            <label htmlFor="name" className="text-sm font-medium">
-              Name
-            </label>
-            <input
-              id="name"
-              name="name"
-              value={values.name}
-              onChange={handleChange}
-              aria-invalid={Boolean(errors.name)}
-              className="rounded-md border border-black/15 bg-background px-3 py-2 text-sm outline-none focus:border-foreground/40 dark:border-white/20"
-            />
-            {errors.name && (
-              <p className="text-xs text-red-500" aria-live="polite">
-                {errors.name}
+  // shared style constants
+  const inputClass =
+    "rounded-lg border border-slate-300 bg-background px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-600 dark:focus:border-blue-400";
+  const selectClass =
+    "rounded-lg border border-slate-300 bg-background px-3 py-2.5 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600";
+  const labelClass = "text-sm font-medium text-foreground/80";
+  const fieldClass = "flex flex-col gap-1.5";
+
+  return (
+    <div className="flex flex-col gap-2">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+
+        <div>
+          <h2 className="text-base font-bold text-foreground">Add New Product</h2>
+          <p className="text-xs text-foreground/50">Fill in product details below</p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} noValidate className="mt-2 flex flex-col gap-6">
+        {/* ── Section 1: Basic Info ── */}
+        <section className="rounded-xl border border-slate-300 bg-background p-5 shadow-sm dark:border-slate-600">
+          <h3 className="mb-4 text-xs font-bold uppercase tracking-widest text-foreground/40">
+            Basic Information
+          </h3>
+
+          <div className="flex flex-col gap-4">
+            {/* Name */}
+            <div className={fieldClass}>
+              <label htmlFor="name" className={labelClass}>
+                Product Name <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="name"
+                name="name"
+                placeholder="e.g. Bosch Oil Filter Premium"
+                value={values.name}
+                onChange={handleChange}
+                aria-invalid={Boolean(errors.name)}
+                aria-describedby={errors.name ? "name-error" : undefined}
+                required
+                className={inputClass}
+              />
+              {errors.name && (
+                <p id="name-error" className="flex items-center gap-1 text-xs text-red-500" role="alert">
+                  <span aria-hidden>⚠</span> {errors.name}
+                </p>
+              )}
+            </div>
+
+            {/* SKU + Brand */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className={fieldClass}>
+                <label htmlFor="sku" className={labelClass}>
+                  SKU{" "}
+                  <span className="font-normal text-foreground/40">(optional)</span>
+                </label>
+                <input
+                  id="sku"
+                  name="sku"
+                  placeholder="e.g. BSC-OIL-001"
+                  value={values.sku}
+                  onChange={handleChange}
+                  className={inputClass}
+                />
+              </div>
+
+              <div className={fieldClass}>
+                <label htmlFor="brand" className={labelClass}>
+                  Brand{" "}
+                  <span className="font-normal text-foreground/40">(optional)</span>
+                </label>
+                <input
+                  id="brand"
+                  name="brand"
+                  placeholder="e.g. Bosch"
+                  value={values.brand}
+                  onChange={handleChange}
+                  className={inputClass}
+                />
+              </div>
+            </div>
+
+            {/* Category */}
+            <div className={fieldClass}>
+              <label className={labelClass}>
+                Category{" "}
+                <span className="font-normal text-foreground/40">(optional)</span>
+              </label>
+              <div className="relative">
+                <button
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded={categoryOpen}
+                  onClick={() => setCategoryOpen((o) => !o)}
+                  className={`flex w-full items-center gap-3 border bg-white px-3 py-2.5 text-left text-sm transition ${
+                    categoryOpen
+                      ? "border-[#17365d] ring-1 ring-[#17365d]"
+                      : values.category
+                      ? "border-[#17365d]"
+                      : "border-slate-200 hover:border-slate-400"
+                  }`}
+                >
+                  <span className={values.category ? "text-slate-900" : "text-slate-500"}>
+                    {values.category || "Select category"}
+                  </span>
+                  <svg
+                    className={`ml-auto h-4 w-4 shrink-0 text-slate-600 transition-transform ${categoryOpen ? "rotate-180" : ""}`}
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <path d="m5 7.5 5 5 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+                {categoryOpen && (
+                  <div
+                    role="listbox"
+                    aria-label="Category"
+                    className="absolute left-0 right-0 top-full z-30 max-h-60 overflow-y-auto border-x border-b border-slate-300 bg-white shadow-lg"
+                  >
+                    {categories.map((cat) => {
+                      const isSelected = values.category === cat;
+                      return (
+                        <button
+                          key={cat}
+                          type="button"
+                          role="option"
+                          aria-selected={isSelected}
+                          onClick={() => {
+                            setValues((prev) => ({ ...prev, category: cat }));
+                            setCategoryOpen(false);
+                          }}
+                          className={`block w-full border-b border-slate-200 px-3 py-2.5 text-left text-sm transition last:border-b-0 ${
+                            isSelected
+                              ? "bg-[#202020] font-medium text-[#f2d21b]"
+                              : "text-slate-800 hover:bg-[#202020] hover:text-[#f2d21b]"
+                          }`}
+                        >
+                          {cat}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Price + Stock */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className={fieldClass}>
+                <label htmlFor="price" className={labelClass}>
+                  Price (IDR) <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-foreground/40">
+                    Rp
+                  </span>
+                  <input
+                    id="price"
+                    name="price"
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    value={values.price}
+                    onChange={handleChange}
+                    aria-invalid={Boolean(errors.price)}
+                    aria-describedby={errors.price ? "price-error" : undefined}
+                    required
+                    className={`${inputClass} pl-9`}
+                  />
+                </div>
+                {errors.price && (
+                  <p id="price-error" className="flex items-center gap-1 text-xs text-red-500" role="alert">
+                    <span aria-hidden>⚠</span> {errors.price}
+                  </p>
+                )}
+              </div>
+
+              <div className={fieldClass}>
+                <label htmlFor="stock" className={labelClass}>
+                  Stock <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="stock"
+                  name="stock"
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={values.stock}
+                  onChange={handleChange}
+                  aria-invalid={Boolean(errors.stock)}
+                  aria-describedby={errors.stock ? "stock-error" : undefined}
+                  required
+                  className={inputClass}
+                />
+                {errors.stock && (
+                  <p id="stock-error" className="flex items-center gap-1 text-xs text-red-500" role="alert">
+                    <span aria-hidden>⚠</span> {errors.stock}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className={fieldClass}>
+              <label htmlFor="description" className={labelClass}>
+                Description{" "}
+                <span className="font-normal text-foreground/40">(optional)</span>
+              </label>
+              <textarea
+                id="description"
+                name="description"
+                placeholder="Brief product description…"
+                value={values.description}
+                onChange={handleChange}
+                rows={3}
+                className={`${inputClass} resize-none`}
+              />
+            </div>
+
+            {/* Image URL */}
+            <div className={fieldClass}>
+              <label htmlFor="imageUrl" className={labelClass}>
+                Image URL{" "}
+                <span className="font-normal text-foreground/40">(optional)</span>
+              </label>
+              <input
+                id="imageUrl"
+                name="imageUrl"
+                type="url"
+                placeholder="https://example.com/image.jpg"
+                value={values.imageUrl}
+                onChange={handleChange}
+                className={inputClass}
+              />
+              {values.imageUrl && (
+                <div className="mt-1 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={values.imageUrl}
+                    alt="Product preview"
+                    className="h-32 w-full object-contain bg-slate-50 p-2 dark:bg-slate-900"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* ── Section 2: Vehicle Fitment ── */}
+        <section className="rounded-xl border border-slate-300 bg-background p-5 shadow-sm dark:border-slate-600">
+          <div className="mb-4 flex items-start justify-between gap-2">
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-widest text-foreground/40">
+                Vehicle Fitment
+              </h3>
+              <p className="mt-1 text-xs text-foreground/50">
+                Only Brand is required. Leave Series, Model, or Engine empty for general accessories.
               </p>
+            </div>
+            {fitments.length > 0 && (
+              <span className="shrink-0 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                {fitments.length} added
+              </span>
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1">
-              <label htmlFor="price" className="text-sm font-medium">
-                Price
+          {/* Draft selectors */}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 items-end">
+            <div className={fieldClass}>
+              <label htmlFor="fitment-brand" className="text-xs font-medium text-foreground/70">
+                Brand
               </label>
-              <input
-                id="price"
-                name="price"
-                type="number"
-                min="0"
-                value={values.price}
-                onChange={handleChange}
-                aria-invalid={Boolean(errors.price)}
-                className="rounded-md border border-black/15 bg-background px-3 py-2 text-sm outline-none focus:border-foreground/40 dark:border-white/20"
-              />
-              {errors.price && (
-                <p className="text-xs text-red-500" aria-live="polite">
-                  {errors.price}
-                </p>
-              )}
+              <select
+                id="fitment-brand"
+                value={draft.brand}
+                onChange={(e) => handleDraftChange("brand", e.target.value)}
+                className={selectClass}
+              >
+                <option value="">Select brand</option>
+                {CAR_BRANDS.map((b) => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+              </select>
             </div>
 
-            <div className="flex flex-col gap-1">
-              <label htmlFor="stock" className="text-sm font-medium">
-                Stock
+            <div className={fieldClass}>
+              <label htmlFor="fitment-series" className="text-xs font-medium text-foreground/70">
+                Series{" "}
+                <span className="font-normal text-foreground/40">(optional)</span>
               </label>
-              <input
-                id="stock"
-                name="stock"
-                type="number"
-                min="0"
-                value={values.stock}
-                onChange={handleChange}
-                aria-invalid={Boolean(errors.stock)}
-                className="rounded-md border border-black/15 bg-background px-3 py-2 text-sm outline-none focus:border-foreground/40 dark:border-white/20"
-              />
-              {errors.stock && (
-                <p className="text-xs text-red-500" aria-live="polite">
-                  {errors.stock}
-                </p>
-              )}
+              <select
+                id="fitment-series"
+                value={draft.series}
+                disabled={!draft.brand}
+                onChange={(e) => handleDraftChange("series", e.target.value)}
+                className={selectClass}
+              >
+                <option value="">
+                  {draft.brand ? "Select series (or skip)" : "Select brand first"}
+                </option>
+                {seriesOptions.map((s) => (
+                  <option key={s.name} value={s.name}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className={fieldClass}>
+              <label htmlFor="fitment-model" className="text-xs font-medium text-foreground/70">
+                Model{" "}
+                <span className="font-normal text-foreground/40">(optional)</span>
+              </label>
+              <select
+                id="fitment-model"
+                value={draft.model}
+                disabled={!draft.series}
+                onChange={(e) => handleDraftChange("model", e.target.value)}
+                className={selectClass}
+              >
+                <option value="">
+                  {draft.series ? "Select model (or skip)" : "Select series first"}
+                </option>
+                {modelOptions.map((m) => (
+                  <option key={m.name} value={m.name}>{m.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className={fieldClass}>
+              <label htmlFor="fitment-engine" className="text-xs font-medium text-foreground/70">
+                Engine{" "}
+                <span className="font-normal text-foreground/40">(optional)</span>
+              </label>
+              <select
+                id="fitment-engine"
+                value={draft.engine}
+                disabled={!draft.model}
+                onChange={(e) => handleDraftChange("engine", e.target.value)}
+                className={selectClass}
+              >
+                <option value="">
+                  {draft.model ? "Select engine (or skip)" : "Select model first"}
+                </option>
+                {engineOptions.map((e) => (
+                  <option key={e} value={e}>{e}</option>
+                ))}
+              </select>
             </div>
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label htmlFor="description" className="text-sm font-medium">
-              Description (optional)
-            </label>
-            <textarea
-              id="description"
-              name="description"
-              value={values.description}
-              onChange={handleChange}
-              rows={3}
-              className="rounded-md border border-black/15 bg-background px-3 py-2 text-sm outline-none focus:border-foreground/40 dark:border-white/20"
-            />
-          </div>
-
-          {submitError && (
-            <p className="text-xs text-red-500" aria-live="polite">
-              {submitError}
+          {fitmentError && (
+            <p className="mt-2 flex items-center gap-1 text-xs text-red-500" role="alert">
+              <span aria-hidden>⚠</span> {fitmentError}
             </p>
           )}
 
           <button
-            type="submit"
-            disabled={submitting}
-            className="w-full rounded-md bg-foreground px-4 py-2 text-sm font-semibold text-background hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            type="button"
+            onClick={handleAddFitment}
+            className="mt-3 flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {submitting ? "Saving…" : "Save Product"}
+          Add Fitment
           </button>
-        </form>
-      </Card>
+
+          {/* Confirmed fitment list */}
+          {fitments.length > 0 && (
+            <ul className="mt-3 flex flex-col gap-2" aria-label="Added fitments">
+              {fitments.map((f, i) => (
+                <li
+                  key={i}
+                  className="flex items-center justify-between rounded-lg border border-slate-300 bg-slate-50 px-3 py-2 text-sm dark:border-slate-600 dark:bg-white/5"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-base" aria-hidden>🚗</span>
+                    <span className="text-foreground/80">{fitmentLabel(f)}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveFitment(i)}
+                    aria-label={`Remove fitment ${fitmentLabel(f)}`}
+                    className="ml-3 rounded px-2 py-0.5 text-xs font-medium text-red-500 transition hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950"
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {/* Submit error */}
+        {submitError && (
+          <div className="flex items-center gap-2 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-700 dark:bg-red-950 dark:text-red-400" role="alert">
+            <span aria-hidden>⚠</span> {submitError}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {submitting ? (
+            <>
+              <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z" />
+              </svg>
+              Saving…
+            </>
+          ) : (
+            <>
+              Save Product
+            </>
+          )}
+        </button>
+      </form>
     </div>
   );
 }
