@@ -2,16 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { VEHICLE_DATA, CAR_BRANDS } from "@/components/vehicle-data";
+import { VEHICLE_DATA, CAR_BRANDS } from "@/lib/vehicle-data";
 import {
   productMatchesVehicle,
   type Fitment,
-} from "@/components/product-fitment";
-import ProductCard from "@/components/ProductCard";
+} from "@/lib/product-fitment";
+import ProductCard from "@/components/ui/ProductCard";
 import { CheckCircle2 } from "lucide-react";
 
 const API_URL =
-  process.env.NEXT_PUBLIC_AUTH_BASE_URL ||
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
   "https://revo-otoshop.onrender.com";
 
 interface Product {

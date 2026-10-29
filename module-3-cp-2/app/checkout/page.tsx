@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Card from "@/components/Card";
-import { useCart } from "@/lib/cart";
-import { useAuth } from "@/lib/useAuth";
+import Card from "@/components/ui/Card";
+import { useCart } from "@/hooks/useCart";
+import { useAuth } from "@/hooks/useAuth";
 import { createOrder } from "@/lib/api";
 
 interface FormValues {
@@ -117,7 +117,7 @@ function validate(values: FormValues): FormErrors {
 
 export default function CheckoutPage() {
   const { items, totalItems, totalPrice, clear } = useCart();
-  const { token, status } = useAuth();
+  const { token, status } = useAuth(true);
   const router = useRouter();
 
   useEffect(() => {
@@ -193,6 +193,18 @@ export default function CheckoutPage() {
       );
       setSubmitting(false);
     }
+  }
+
+  // --- Auth loading --------------------------------------------------------
+  if (status === "loading") {
+    return (
+      <div className="flex flex-col gap-6">
+        <h1 className="text-2xl font-bold tracking-tight">Checkout</h1>
+        <p className="py-10 text-center text-sm text-foreground/60" aria-live="polite">
+          Loading…
+        </p>
+      </div>
+    );
   }
 
   // --- Empty cart ----------------------------------------------------------

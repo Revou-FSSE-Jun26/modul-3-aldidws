@@ -9,6 +9,7 @@ export interface Product {
   brand?: string;
   sku?: string;
   is_featured?: boolean;
+  is_active?: boolean;
   fitments?: Array<{
     brand: string;
     series?: string;

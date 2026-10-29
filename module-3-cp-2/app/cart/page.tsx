@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import Card from "@/components/Card";
-import { useCart } from "@/lib/cart";
-import { useAuth } from "@/lib/useAuth";
+import Card from "@/components/ui/Card";
+import { useCart } from "@/hooks/useCart";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function CartPage() {
   const { items, totalItems, totalPrice, updateQuantity, removeItem, clear } =
@@ -99,8 +99,9 @@ export default function CartPage() {
                           onClick={() =>
                             updateQuantity(item.id, item.quantity + 1)
                           }
+                          disabled={item.stock != null && item.quantity >= item.stock}
                           aria-label={`Increase quantity of ${item.name}`}
-                          className="px-3 py-1 text-lg leading-none"
+                          className="px-3 py-1 text-lg leading-none disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           +
                         </button>

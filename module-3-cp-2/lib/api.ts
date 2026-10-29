@@ -94,6 +94,7 @@ interface RawProduct {
   brand?: string | null;
   sku?: string | null;
   is_featured?: boolean;
+  is_active?: boolean;
   fitments?: Array<{
     brand: string;
     series?: string | null;
@@ -121,6 +122,7 @@ function mapProduct(raw: RawProduct): Product {
     brand: raw.brand ?? undefined,
     sku: raw.sku ?? undefined,
     is_featured: raw.is_featured ?? false,
+    is_active: raw.is_active ?? true,
     fitments: Array.isArray(raw.fitments)
       ? raw.fitments
           .filter((f) => f && typeof f.brand === "string" && f.brand.trim() !== "")
@@ -151,7 +153,9 @@ export async function getProducts(
     undefined,
     cacheOptions,
   );
-  return data.products.map(mapProduct);
+  return data.products
+    .filter((p) => p.is_active !== false)
+    .map(mapProduct);
 }
 
 export async function getProduct(

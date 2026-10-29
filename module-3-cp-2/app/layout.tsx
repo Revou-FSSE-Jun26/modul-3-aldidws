@@ -5,10 +5,10 @@ import "./globals.css";
 import { Suspense } from "react";
 import { Toaster } from "react-hot-toast";
 
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import { ConditionalHeader, ConditionalFooter, ConditionalMain } from "@/components/AppShell";
-import { CartProvider } from "@/lib/cart";
+import Header from "@/components/layout/Header";
+import Footer from "@/components/layout/Footer";
+import { ConditionalHeader, ConditionalFooter, ConditionalMain } from "@/components/layout/AppShell";
+import { CartProvider } from "@/context/CartContext";
 
 const poppins = Poppins({
   variable: "--font-poppins",
