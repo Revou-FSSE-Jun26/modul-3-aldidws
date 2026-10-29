@@ -21,13 +21,12 @@ export function getProductFitments(product: FitmentProduct): Fitment[] {
   if (Array.isArray(product.fitments) && product.fitments.length > 0) {
     // Normalize null → undefined and filter out entries without a brand
     const valid = product.fitments
-      .filter((f) => f && typeof (f as unknown as Record<string, unknown>).brand === "string" && ((f as unknown as Record<string, unknown>).brand as string).trim() !== "")
-      .map((f) => {
-        const raw = f as unknown as Record<string, unknown>;
-        const normalized: Fitment = { brand: raw.brand as string };
-        if (raw.series != null) normalized.series = raw.series as string;
-        if (raw.model != null) normalized.model = raw.model as string;
-        if (raw.engine != null) normalized.engine = raw.engine as string;
+      .filter((f) => f && typeof f.brand === "string" && f.brand.trim() !== "")
+      .map((f): Fitment => {
+        const normalized: Fitment = { brand: f.brand };
+        if (f.series != null) normalized.series = f.series;
+        if (f.model != null) normalized.model = f.model;
+        if (f.engine != null) normalized.engine = f.engine;
         return normalized;
       });
     if (valid.length > 0) return valid;
@@ -42,6 +41,16 @@ export type VehicleSelection = {
   engine?: string;
 };
 
+/** Normalize dashes: replace en dash (–) and em dash (—) with hyphen (-) */
+function normalizeDashes(str: string): string {
+  return str.replace(/[\u2013\u2014]/g, "-");
+}
+
+/** Case-insensitive, dash-normalized string comparison */
+function looseMatch(a: string, b: string): boolean {
+  return normalizeDashes(a).toLowerCase() === normalizeDashes(b).toLowerCase();
+}
+
 export function productMatchesVehicle(
   product: FitmentProduct,
   selection: VehicleSelection
@@ -52,29 +61,32 @@ export function productMatchesVehicle(
   const fitments = getProductFitments(product);
 
   // Product has no fitment data → treat as universal, always show
-  if (fitments.length === 0) return false;
+  if (fitments.length === 0) return true;
 
   return fitments.some((f) => {
     // Brand must always match
-    if (f.brand !== selection.brand) return false;
+    if (!looseMatch(f.brand, selection.brand!)) return false;
 
     // If the fitment has no series, it covers all series of that brand
     if (!f.series) return true;
 
     // Series is defined on the fitment — must match if user picked one
-    if (selection.series && f.series !== selection.series) return false;
+    if (selection.series && !looseMatch(f.series, selection.series)) return false;
 
-    // If the fitment has no model, it covers all models in that series
-    if (!f.model) return true;
+    // If the fitment has no model, it covers all models (check engine if present)
+    if (!f.model) {
+      if (!f.engine) return true; // brand+series covers all models/engines
+      return !selection.engine || looseMatch(f.engine, selection.engine);
+    }
 
     // Model is defined — must match if user picked one
-    if (selection.model && f.model !== selection.model) return false;
+    if (selection.model && !looseMatch(f.model, selection.model)) return false;
 
     // If the fitment has no engine, it covers all engines in that model
     if (!f.engine) return true;
 
     // Engine is defined — must match if user picked one
-    if (selection.engine && f.engine !== selection.engine) return false;
+    if (selection.engine && !looseMatch(f.engine, selection.engine)) return false;
 
     return true;
   });

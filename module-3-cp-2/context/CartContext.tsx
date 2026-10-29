@@ -2,7 +2,7 @@
 
 import {
   createContext,
-  useContext,
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -13,9 +13,10 @@ export interface CartItem {
   name: string;
   price: number;
   quantity: number;
+  stock?: number;
 }
 
-interface CartContextValue {
+export interface CartContextValue {
   items: CartItem[];
   totalItems: number;
   totalPrice: number;
@@ -27,7 +28,7 @@ interface CartContextValue {
 
 const STORAGE_KEY = "cart";
 
-const CartContext = createContext<CartContextValue | null>(null);
+export const CartContext = createContext<CartContextValue | null>(null);
 
 function isCartItem(value: unknown): value is CartItem {
   if (typeof value !== "object" || value === null) return false;
@@ -73,33 +74,36 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [items, hydrated]);
 
-  function addItem(item: Omit<CartItem, "quantity">, quantity = 1) {
+  const addItem = useCallback((item: Omit<CartItem, "quantity">, quantity = 1) => {
     setItems((prev) => {
       const existing = prev.find((i) => i.id === item.id);
       if (existing) {
+        const newQty = existing.quantity + quantity;
+        const capped = item.stock != null ? Math.min(newQty, item.stock) : newQty;
         return prev.map((i) =>
-          i.id === item.id ? { ...i, quantity: i.quantity + quantity } : i,
+          i.id === item.id ? { ...i, quantity: capped } : i,
         );
       }
-      return [...prev, { ...item, quantity }];
+      const initialQty = item.stock != null ? Math.min(quantity, item.stock) : quantity;
+      return [...prev, { ...item, quantity: initialQty }];
     });
-  }
+  }, []);
 
-  function removeItem(id: number | string) {
+  const removeItem = useCallback((id: number | string) => {
     setItems((prev) => prev.filter((i) => i.id !== id));
-  }
+  }, []);
 
-  function updateQuantity(id: number | string, quantity: number) {
+  const updateQuantity = useCallback((id: number | string, quantity: number) => {
     setItems((prev) =>
       quantity <= 0
         ? prev.filter((i) => i.id !== id)
         : prev.map((i) => (i.id === id ? { ...i, quantity } : i)),
     );
-  }
+  }, []);
 
-  function clear() {
+  const clear = useCallback(() => {
     setItems([]);
-  }
+  }, []);
 
   const value = useMemo<CartContextValue>(() => {
     const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
@@ -116,12 +120,4 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [items]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
-}
-
-export function useCart(): CartContextValue {
-  const ctx = useContext(CartContext);
-  if (!ctx) {
-    throw new Error("useCart must be used within a CartProvider");
-  }
-  return ctx;
 }

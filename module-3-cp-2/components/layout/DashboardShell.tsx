@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useAuth } from "@/lib/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import { LayoutDashboard, Package, Tag, ClipboardList, Store, LogOut } from "lucide-react";
 
 const NAV_ITEMS = [

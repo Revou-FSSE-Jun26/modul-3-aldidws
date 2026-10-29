@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import EditProductForm from "@/components/EditProductForm";
-import DeleteProductForm from "@/components/DeleteProductForm";
+import EditProductForm from "@/components/dashboard/EditProductForm";
+import DeleteProductForm from "@/components/dashboard/DeleteProductForm";
 import type { Product } from "@/lib/types";
 
 interface ProductEditSectionProps {

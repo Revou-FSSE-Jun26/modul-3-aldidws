@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { Suspense, useEffect, useRef, useState, type FormEvent } from "react";
 import {
   Search,
   ShoppingCart,
@@ -11,8 +11,8 @@ import {
 } from "lucide-react";
 
 import { getCategories } from "@/lib/api";
-import { useCart } from "@/lib/cart";
-import { useAuth } from "@/lib/useAuth";
+import { useCart } from "@/hooks/useCart";
+import { useAuth } from "@/hooks/useAuth";
 
 type Category = Awaited<ReturnType<typeof getCategories>>[number];
 
@@ -22,10 +22,21 @@ const NAV_LINKS = [
   { href: "/about", label: "About Us" },
 ] as const;
 
+/**
+ * Tiny wrapper that reads useSearchParams() (needs Suspense) and passes
+ * the current "q" value to a callback so the parent can seed the search field.
+ */
+function SearchParamsSync({ onParams }: { onParams: (q: string) => void }) {
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    onParams(searchParams.get("q") ?? "");
+  }, [searchParams, onParams]);
+  return null;
+}
+
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const { totalItems } = useCart();
   const { status, logout, user, isAdmin: isAdminRaw } = useAuth(true);
@@ -35,7 +46,7 @@ export default function Header() {
   const isAdmin = mounted && isAdminRaw;
   const isAuthenticated = mounted && status === "authenticated";
 
-  const [searchQuery, setSearchQuery] = useState(searchParams.get("q") ?? "");
+  const [searchQuery, setSearchQuery] = useState("");
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [categoriesError, setCategoriesError] = useState(false);
@@ -66,11 +77,6 @@ export default function Header() {
   useEffect(() => {
     setCategoriesOpen(false);
   }, [pathname]);
-
-  // Sync search with URL
-  useEffect(() => {
-    setSearchQuery(searchParams.get("q") ?? "");
-  }, [searchParams]);
 
   // #1 — Close dropdown when clicking outside
   useEffect(() => {
@@ -130,6 +136,11 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white text-slate-800 shadow-sm">
+      {/* Sync search query from URL params without blocking the header render */}
+      <Suspense fallback={null}>
+        <SearchParamsSync onParams={setSearchQuery} />
+      </Suspense>
+
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
 
         {/* Main row */}

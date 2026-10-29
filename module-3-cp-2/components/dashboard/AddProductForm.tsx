@@ -4,12 +4,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { createProduct, getCategories, type ProductFitmentInput } from "@/lib/api";
-import { useAuth } from "@/lib/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import {
   VEHICLE_DATA,
   CAR_BRANDS,
   type VehicleSeries,
-} from "@/components/vehicle-data";
+} from "@/lib/vehicle-data";
 
 // ---------------------------------------------------------------------------
 // Product form
@@ -119,9 +119,9 @@ export default function AddProductForm() {
   const [categoryOpen, setCategoryOpen] = useState(false);
 
   useEffect(() => {
-    getCategories().then((cats) =>
-      setCategories(cats.map((c) => c.name))
-    );
+    getCategories()
+      .then((cats) => setCategories(cats.map((c) => c.name)))
+      .catch(() => setCategories([]));
   }, []);
 
   // Dependent options for the draft
@@ -503,7 +503,7 @@ export default function AddProductForm() {
                 onChange={handleChange}
                 className={inputClass}
               />
-              {values.imageUrl && (
+              {values.imageUrl && /^https?:\/\//.test(values.imageUrl) && (
                 <div className="mt-1 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img

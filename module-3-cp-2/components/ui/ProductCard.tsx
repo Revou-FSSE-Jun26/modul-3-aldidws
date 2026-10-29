@@ -4,8 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
-import { useCart } from "@/lib/cart";
-import { useAuth } from "@/lib/useAuth";
+import { useCart } from "@/hooks/useCart";
+import { useAuth } from "@/hooks/useAuth";
 import { ShoppingCart, Eye } from "lucide-react";
 
 export interface ProductCardProps {

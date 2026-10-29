@@ -1,4 +1,4 @@
-﻿export type VehicleModel = { name: string; engines: string[] };
+export type VehicleModel = { name: string; engines: string[] };
 export type VehicleSeries = { name: string; models: VehicleModel[] };
 
 export const VEHICLE_DATA: Record<string, VehicleSeries[]> = {

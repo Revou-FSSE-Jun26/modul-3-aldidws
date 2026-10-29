@@ -2,8 +2,8 @@
 
 
 import { useCallback, useEffect, useState } from "react";
-import { AuthError, getMe } from "./auth";
-import type { User } from "./types";
+import { AuthError, getMe } from "@/lib/auth";
+import type { User } from "@/lib/types";
 
 const TOKEN_KEY = "token";
 const USER_KEY = "user";
@@ -52,12 +52,14 @@ export function useAuth(verify = false): AuthState {
   const [user, setUser] = useState<User | null>(readStoredUser);
   const [status, setStatus] = useState<AuthStatus>(() => {
     if (typeof window === "undefined") return "loading";
-    const storedToken = readStoredToken();
-    if (!storedToken) return "unauthenticated";
-    // When verification is requested, stay "loading" until the effect
-    // confirms the token with the server.
-    if (verify) return "loading";
-    return readStoredUser() ? "authenticated" : "unauthenticated";
+    try {
+      const t = localStorage.getItem("token");
+      if (!t) return "unauthenticated";
+      if (verify) return "loading";
+      return localStorage.getItem("user") ? "authenticated" : "unauthenticated";
+    } catch {
+      return "unauthenticated";
+    }
   });
 
   const logout = useCallback(() => {

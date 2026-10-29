@@ -4,12 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { updateProduct, getCategories, type ProductFitmentInput } from "@/lib/api";
-import { useAuth } from "@/lib/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import {
   VEHICLE_DATA,
   CAR_BRANDS,
   type VehicleSeries,
-} from "@/components/vehicle-data";
+} from "@/lib/vehicle-data";
 import type { Product } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
