@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAuth } from "@/lib/useAuth";
-import DeleteProductForm from "@/components/DeleteProductForm";
-import EditProductForm from "@/components/EditProductForm";
+import { useAuth } from "@/hooks/useAuth";
+import DeleteProductForm from "@/components/dashboard/DeleteProductForm";
+import EditProductForm from "@/components/dashboard/EditProductForm";
 import type { Product } from "@/lib/types";
 
 interface AdminProductActionsProps {

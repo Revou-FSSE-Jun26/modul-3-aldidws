@@ -90,7 +90,6 @@ return (
             src={imageUrl}
             alt={product.name}
             fill
-            unoptimized
             priority
             sizes="(max-width: 1024px) 100vw, 50vw"
             className="object-contain p-4 sm:p-8"

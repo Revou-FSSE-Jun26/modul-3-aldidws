@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import AddCategoryForm from "@/components/AddCategoryForm";
+import AddCategoryForm from "@/components/dashboard/AddCategoryForm";
 import { getCategories } from "@/lib/api";
 
 export const dynamic = "force-dynamic";

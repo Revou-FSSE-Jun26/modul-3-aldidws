@@ -1,5 +1,5 @@
 import AdminGuard from "@/components/AdminGuard";
-import DashboardShell from "@/components/DashboardShell";
+import DashboardShell from "@/components/layout/DashboardShell";
 
 export const metadata = {
   title: "Dashboard",

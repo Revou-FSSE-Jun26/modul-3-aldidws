@@ -1,6 +1,6 @@
 import { getProducts } from "@/lib/api";
-import ProductCard from "@/components/ProductCard";
-import AddProductForm from "@/components/AddProductForm";
+import ProductCard from "@/components/ui/ProductCard";
+import AddProductForm from "@/components/dashboard/AddProductForm";
 
 export const dynamic = "force-dynamic";
 

@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import Card from "@/components/Card";
-import ErrorState from "@/components/ErrorState";
+import Card from "@/components/ui/Card";
+import ErrorState from "@/components/ui/ErrorState";
 import { getOrder } from "@/lib/api";
-import { useAuth } from "@/lib/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import type { Order } from "@/lib/types";
 
 export default function OrdersDetailPage() {

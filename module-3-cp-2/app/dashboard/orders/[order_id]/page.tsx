@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import ErrorState from "@/components/ErrorState";
+import ErrorState from "@/components/ui/ErrorState";
 import { getOrder } from "@/lib/api";
-import { useAuth } from "@/lib/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import type { Order } from "@/lib/types";
 
 const rupiahFormatter = new Intl.NumberFormat("id-ID");

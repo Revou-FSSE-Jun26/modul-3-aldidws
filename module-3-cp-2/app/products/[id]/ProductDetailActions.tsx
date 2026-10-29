@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { useCart } from "@/lib/cart";
+import { useCart } from "@/hooks/useCart";
 
 interface ProductDetailActionsProps {
 id: number | string;

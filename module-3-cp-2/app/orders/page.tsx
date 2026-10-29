@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Card from "@/components/Card";
-import ErrorState from "@/components/ErrorState";
+import Card from "@/components/ui/Card";
+import ErrorState from "@/components/ui/ErrorState";
 import { getMyOrders } from "@/lib/api";
-import { useAuth } from "@/lib/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 import type { Order } from "@/lib/types";
 
 export default function OrdersPage() {
@@ -93,7 +93,7 @@ export default function OrdersPage() {
               >
                 <Card className="flex items-center justify-between">
                   <div className="flex flex-col">
-                    <span className="font-semibold">Orders #{order.id}</span>
+                    <span className="font-semibold">Order #{order.id}</span>
                     <span className="text-sm text-foreground/60">
                       {order.customerName}
                     </span>

@@ -3,9 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import PasswordInput from "@/components/PasswordInput";
+import PasswordInput from "@/components/ui/PasswordInput";
 import { AuthError, login } from "@/lib/auth";
-import { useAuth } from "@/lib/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 
 const inputClass =
   "w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm placeholder:text-slate-400 outline-none transition focus:border-[#17365d] focus:bg-white focus:ring-2 focus:ring-[#17365d]/10";
@@ -36,11 +36,8 @@ export default function LoginPage() {
       const result = await login({ email, password });
       localStorage.setItem("token", result.token);
       localStorage.setItem("user", JSON.stringify(result.user));
-      if (result.user.role === "admin") {
-        router.push("/dashboard");
-      } else {
-        router.push(redirectTo ?? "/");
-      }
+      const safeRedirect = redirectTo?.startsWith("/") ? redirectTo : null;
+      router.push(safeRedirect ?? (result.user.role === "admin" ? "/dashboard" : "/"));
     } catch (err) {
       setError(
         err instanceof AuthError ? err.message : "An unexpected error occurred.",

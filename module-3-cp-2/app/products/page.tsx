@@ -1,6 +1,6 @@
 import { getProducts } from "@/lib/api";
-import ProductCard from "@/components/ProductCard";
-import HeroSlider from "@/components/HeroSlider";
+import ProductCard from "@/components/ui/ProductCard";
+import HeroSlider from "@/components/ui/HeroSlider";
 
 export const dynamic = "force-dynamic";
 

@@ -10,7 +10,6 @@ export const metadata = {
 
 export default async function CategoriesPage() {
   const categories = await getCategories({
-    revalidate: 60,
     tags: ["categories"],
   });
 

@@ -2,8 +2,8 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getProduct } from "@/lib/api";
-import ProductCard from "@/components/ProductCard";
-import ProductEditSection from "@/components/ProductEditSection";
+import ProductCard from "@/components/ui/ProductCard";
+import ProductEditSection from "@/components/dashboard/ProductEditSection";
 
 export async function generateMetadata({
   params,

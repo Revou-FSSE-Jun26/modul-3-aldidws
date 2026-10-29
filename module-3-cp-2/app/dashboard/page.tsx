@@ -2,9 +2,9 @@
 
 import { memo, useEffect, useState } from "react";
 import Link from "next/link";
-import ErrorState from "@/components/ErrorState";
+import ErrorState from "@/components/ui/ErrorState";
 import { getDashboardStats, type DashboardStats } from "@/lib/api";
-import { useAuth } from "@/lib/useAuth";
+import { useAuth } from "@/hooks/useAuth";
 
 const rupiahFormatter = new Intl.NumberFormat("id-ID");
 
@@ -130,7 +130,7 @@ function DashboardContent() {
   const { token } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(Boolean(token));
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!token) return;

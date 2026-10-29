@@ -2,8 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getCategory } from "@/lib/api";
-import EditCategoryForm from "@/components/EditCategoryForm";
-import DeleteCategoryForm from "@/components/DeleteCategoryForm";
+import EditCategoryForm from "@/components/dashboard/EditCategoryForm";
+import DeleteCategoryForm from "@/components/dashboard/DeleteCategoryForm";
 
 export async function generateMetadata({
   params,
