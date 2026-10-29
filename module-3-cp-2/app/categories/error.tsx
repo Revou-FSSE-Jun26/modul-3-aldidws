@@ -1,14 +1,15 @@
 "use client";
 
+
 import { useEffect } from "react";
 import ErrorState from "@/components/ErrorState";
 
 export default function Error({
   error,
-  retry,
+  reset,
 }: {
   error: Error & { digest?: string };
-  retry: () => void;
+  reset: () => void;
 }) {
   useEffect(() => {
     console.error(error);
@@ -16,11 +17,13 @@ export default function Error({
 
   return (
     <ErrorState
+      title="Failed to load categories"
+      message="We couldn't fetch the category list. Please try again or return to the homepage."
       detail={error.message}
       action={
         <button
-          onClick={() => retry()}
-          className="mt-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
+          onClick={reset}
+          className="rounded-lg bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800"
         >
           Try again
         </button>
