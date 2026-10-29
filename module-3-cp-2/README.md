@@ -4,7 +4,7 @@ A [Next.js](https://nextjs.org) storefront (App Router) for an automotive parts 
 
 ## Overview
 
-RevoShop is the frontend for an online automotive parts store ("Revo Otoshop"). It lets shoppers browse a product catalog, filter it with live search, drill into product and category detail pages, and collect items in a cart that survives page reloads. Signed-in users can check out to create an order and review their past orders, while admins get a separate dashboard for managing the catalog and fulfilling orders.
+RevoShop is the frontend for an online automotive parts store ("Revo Otoshop"). It lets shoppers browse a product catalog, filter it with live search and a **vehicle fitment selector**, drill into product and category detail pages, and collect items in a cart that survives page reloads. Signed-in users can check out to create an order and review their past orders, while admins get a separate dashboard for managing the catalog and fulfilling orders.
 
 The app is built entirely on the Next.js App Router and talks to an external REST backend for all catalog, order, and auth data. Catalog and category listings are rendered on the server; the cart, auth session, and dashboard interactions run on the client. Route-level `loading`, `error`, and `not-found` states are wired up throughout so every async view degrades gracefully.
 
@@ -12,12 +12,20 @@ The app is built entirely on the Next.js App Router and talks to an external RES
 
 ### Storefront
 
-- **Home** — landing view with featured products and entry points into the catalog.
+- **Home** — landing view with a full-width hero image, a benefits bar, a **vehicle fitment selector** (brand → series → model → engine), and a featured product grid with live search, category filter, and sort.
 - **Product listing** (`/products`) — full catalog with **live search filtering** as you type.
 - **Product detail** (`/products/[id]`) — per-product page with an "add to cart" action; unknown ids resolve to a `not-found` state.
 - **Category listing** (`/categories`) — browse all categories, then view the products within each one (`/categories/[categories_id]`).
 - **Shopping cart** (`/cart`) — add / remove items and update quantities, persisted to `localStorage` so it survives reloads.
 - **Checkout** (`/checkout`) — turns the cart into an order against the API (requires a signed-in user).
+- **About** (`/about`) — static brand page with hero image, stats, company story, core values, and a CTA banner.
+
+### Vehicle Fitment
+
+- A **4-step vehicle selector** on the home page lets users pick brand → series → model → engine to filter the product catalog to compatible parts.
+- Fitment data is resolved per-product from the API response (`fitments` field) with a local fallback lookup (`PRODUCT_FITMENT` in `product-fitment.ts`).
+- Products with no fitment data are treated as universal and hidden when a vehicle is selected; products whose fitment matches the selection are surfaced.
+- Vehicle options are driven by `vehicle-data.tsx` (`VEHICLE_DATA`, `CAR_BRANDS`).
 
 ### Authentication & account
 
@@ -48,12 +56,13 @@ The app is built entirely on the Next.js App Router and talks to an external RES
 - **React 19** — UI components and client interactivity.
 - **TypeScript 5** — typed components, API clients, and shared types in `lib/types.ts`.
 - **Tailwind CSS 4** — styling.
+- **`lucide-react`** — icon set used across UI components.
+- **`react-hot-toast`** — toast notifications for user-facing feedback (form submissions, errors).
 - **`next/navigation`** — client-side routing primitives (`useRouter`, `usePathname`, `useSearchParams`, `useParams`, `notFound`, `redirect`) used across search, auth, cart, checkout, and dashboard flows.
 - **`localStorage`** — session persistence (auth token + user under `token` / `user`) and cart persistence (under `cart`).
 - **`NEXT_PUBLIC_API_BASE_URL`** / **`NEXT_PUBLIC_AUTH_BASE_URL`** — public environment variables pointing the catalog and auth API clients at the backend.
-- **Playwright** — end-to-end test suite (lives at the repository root; see below).
-
-> Note: user-facing feedback is handled with inline UI states (error cards, loading views) rather than a toast library — there is no `react-hot-toast` dependency in this project.
+- **Playwright** — end-to-end test suite covering auth, cart, categories, checkout, home, navigation, products, and protected routes.
+- **Vercel** — deployment platform. The app is deployed via the Vercel Next.js integration; environment variables (`NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_AUTH_BASE_URL`) are configured in the Vercel project settings.
 
 ## Getting started (run locally)
 
@@ -88,12 +97,13 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ### Available scripts
 
-| Script          | Description                   |
-| --------------- | ----------------------------- |
-| `npm run dev`   | Start the development server. |
-| `npm run build` | Create a production build.    |
-| `npm run start` | Serve the production build.   |
-| `npm run lint`  | Run ESLint.                   |
+| Script             | Description                    |
+| ------------------ | ------------------------------ |
+| `npm run dev`      | Start the development server.  |
+| `npm run build`    | Create a production build.     |
+| `npm run start`    | Serve the production build.    |
+| `npm run lint`     | Run ESLint.                    |
+| `npm run test:e2e` | Run the Playwright test suite. |
 
 ## Running the test suite (Playwright)
 
@@ -177,8 +187,9 @@ Screenshots of the main views live in [`docs/screenshots/`](./docs/screenshots).
 
 ```
 app/              App Router pages
-  page.tsx        Home
+  page.tsx        Home (hero, vehicle selector, product grid with search/sort/filter)
   layout.tsx      Root layout (wraps the app in CartProvider, Header, Footer)
+  about/          Static about page (brand story, stats, values)
   products/       Product list + [id] detail (with loading/error)
   categories/     Category list + [categories_id] detail (with loading/error)
   cart/           Shopping cart page
@@ -195,24 +206,26 @@ app/              App Router pages
     orders/       Order management + [order_id] detail
   admin/
     dashboard/    Admin dashboard entry
-components/       Reusable UI components
-  Header.tsx          Site header with nav and cart indicator
-  Footer.tsx          Site footer
-  Card.tsx            Generic card container
-  ProductCard.tsx     Product tile used in listings
-  SearchBar.tsx       Live search input
-  PasswordInput.tsx   Password field with show/hide toggle
-  AdminGuard.tsx      Client guard that restricts a subtree to admin users
-  AddProductForm.tsx / EditProductForm.tsx / DeleteProductForm.tsx     Product CRUD forms
-  AddCategoryForm.tsx / EditCategoryForm.tsx / DeleteCategoryForm.tsx  Category CRUD forms
-  ErrorState.tsx      Shared error UI
+
+app/                  ← Next.js App Router pages (unchanged)
+components/
+  layout/             ← Header, Footer, AppShell, DashboardShell
+  ui/                 ← Card, ProductCard, HeroSlider, SearchBar, PasswordInput, ErrorState, Field
+  dashboard/          ← AddProductForm, EditProductForm, DeleteProductForm, ProductEditSection,
+                         AddCategoryForm, EditCategoryForm, DeleteCategoryForm
+  AdminGuard.tsx      ← auth guard (stays at root)
+context/
+  CartContext.tsx     ← CartContext, CartProvider, CartItem
+hooks/
+  useAuth.ts          ← authentication hook
+  useCart.ts          ← cart hook
 lib/
-  api.ts        Catalog API client (products, categories, orders, admin, dashboard stats) + response mappers
-  auth.ts       Auth API client (register, login, getMe) + AuthError
-  useAuth.ts    useAuth() hook: reads token/user from localStorage, optional server verification, isAdmin, logout
-  cart.tsx      Cart context/provider (CartProvider, useCart), persisted to localStorage
-  orderForm.tsx Checkout form helpers (fields, validation, shared Field component)
-  types.ts      Shared TypeScript types
+  api.ts              ← API client
+  auth.ts             ← auth utilities
+  types.ts            ← shared TypeScript types
+  product-fitment.ts  ← fitment matching logic
+  vehicle-data.ts     ← BMW vehicle data
+  orderForm.ts        ← order form types, validation, field configs
 ```
 
 ## API notes
@@ -220,9 +233,10 @@ lib/
 - The catalog API returns wrapped responses (`{ products: [...] }`, `{ product: {...} }`, etc.). `lib/api.ts` unwraps these and maps fields such as `image_url` → `imageUrl` and `category_name` → `category`, and converts the string `price` into a number. API failures throw an `ApiError` carrying the HTTP status.
 - The `/orders` endpoint requires authentication (`Authorization: Bearer <token>`). Without a valid token the orders page surfaces an error state. Log in first to obtain a token (stored in `localStorage` after login/register).
 - Order creation goes through `createOrder(...)`, and the admin dashboard uses `getAdminOrders(...)` and `getDashboardStats(...)`, all of which require a bearer token.
-- Authentication lives in `lib/auth.ts` (`register`, `login`, `getMe`) and `lib/useAuth.ts`. `useAuth()` reads the token and user from `localStorage`; passing `useAuth(true)` re-verifies the token against `/me` and logs out on a 401. Admin-only UI is gated by `isAdmin` (derived from `user.role === "admin"`) and the `AdminGuard` component.
-- The cart is entirely client-side. `lib/cart.tsx` exposes a `CartProvider` (wired up in the root layout) and a `useCart()` hook, and persists the cart to `localStorage` under the `cart` key so it survives reloads.
+- Authentication lives in `lib/auth.ts` (`register`, `login`, `getMe`) and `hooks/useAuth.ts`. `useAuth()` reads the token and user from `localStorage`; passing `useAuth(true)` re-verifies the token against `/me` and logs out on a 401. Admin-only UI is gated by `isAdmin` (derived from `user.role === "admin"`) and the `AdminGuard` component.
+- The cart is entirely client-side. `context/CartContext.tsx` exposes a `CartProvider` (wired up in the root layout) and `hooks/useCart.ts` provides the `useCart()` hook, persisting the cart to `localStorage` under the `cart` key so it survives reloads.
 - The auth token and user are stored in `localStorage` (under `token` and `user`), which is readable by any script (XSS token-theft risk); migrating the token to an `httpOnly` cookie set by a server route is a recommended future security hardening (deferred).
+- Product fitment data comes from the API's `fitments` field on each product. `lib/product-fitment.ts` normalizes this data and provides a local SKU-based fallback (`PRODUCT_FITMENT`) for products whose API response lacks fitment entries. `lib/vehicle-data.ts` holds the full vehicle hierarchy (brands → series → models → engines) used by the home page selector.
 
 ## Deploy on Vercel
 
