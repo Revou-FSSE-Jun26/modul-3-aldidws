@@ -6,6 +6,15 @@ export interface Product {
   stock: number;
   category?: string;
   imageUrl?: string;
+  brand?: string;
+  sku?: string;
+  is_featured?: boolean;
+  fitments?: Array<{
+    brand: string;
+    series?: string;
+    model?: string;
+    engine?: string;
+  }>;
 }
 
 export interface Category {
@@ -13,6 +22,7 @@ export interface Category {
   name: string;
   description?: string;
   productCount?: number;
+  imageUrl?: string;
 }
 
 export interface Order {

@@ -84,19 +84,29 @@ async function apiFetch<T>(
 }
 
 interface RawProduct {
-  id: string;
+  id: string | number;
   name: string;
   description?: string | null;
   price: string | number;
   stock: number;
   category_name?: string | null;
   image_url?: string | null;
+  brand?: string | null;
+  sku?: string | null;
+  is_featured?: boolean;
+  fitments?: Array<{
+    brand: string;
+    series?: string | null;
+    model?: string | null;
+    engine?: string | null;
+  }> | null;
 }
 
 interface RawCategory {
   id: string;
   name: string;
   description?: string | null;
+  image_url?: string | null;
 }
 
 function mapProduct(raw: RawProduct): Product {
@@ -105,9 +115,22 @@ function mapProduct(raw: RawProduct): Product {
     name: raw.name,
     description: raw.description ?? undefined,
     price: Number(raw.price),
-    stock: raw.stock,
+    stock: Number(raw.stock),
     category: raw.category_name ?? undefined,
     imageUrl: raw.image_url ?? undefined,
+    brand: raw.brand ?? undefined,
+    sku: raw.sku ?? undefined,
+    is_featured: raw.is_featured ?? false,
+    fitments: Array.isArray(raw.fitments)
+      ? raw.fitments
+          .filter((f) => f && typeof f.brand === "string" && f.brand.trim() !== "")
+          .map((f) => ({
+            brand: f.brand,
+            ...(f.series != null ? { series: f.series } : {}),
+            ...(f.model != null ? { model: f.model } : {}),
+            ...(f.engine != null ? { engine: f.engine } : {}),
+          }))
+      : undefined,
   };
 }
 
@@ -116,6 +139,7 @@ function mapCategory(raw: RawCategory): Category {
     id: raw.id,
     name: raw.name,
     description: raw.description ?? undefined,
+    imageUrl: raw.image_url ?? undefined,
   };
 }
 
@@ -286,17 +310,29 @@ async function writeFetch<T>(
   return (await res.json()) as T;
 }
 
+export interface ProductFitmentInput {
+  brand: string;
+  series?: string;
+  model?: string;
+  engine?: string;
+}
+
 export interface ProductInput {
   name: string;
   price: number;
   stock: number;
   description?: string;
+  sku?: string;
+  brand?: string;
+  imageUrl?: string;
   category?: string;
+  fitments?: ProductFitmentInput[];
 }
 
 export interface CategoryInput {
   name: string;
   description?: string;
+  imageUrl?: string;
 }
 
 function toProductPayload(input: ProductInput): Record<string, unknown> {
@@ -308,8 +344,20 @@ function toProductPayload(input: ProductInput): Record<string, unknown> {
   if (input.description !== undefined) {
     payload.description = input.description;
   }
+  if (input.sku !== undefined) {
+    payload.sku = input.sku;
+  }
+  if (input.brand !== undefined) {
+    payload.brand = input.brand;
+  }
+  if (input.imageUrl !== undefined) {
+    payload.image_url = input.imageUrl;
+  }
   if (input.category !== undefined) {
     payload.category_name = input.category;
+  }
+  if (input.fitments !== undefined) {
+    payload.fitments = input.fitments;
   }
   return payload;
 }
@@ -318,6 +366,9 @@ function toCategoryPayload(input: CategoryInput): Record<string, unknown> {
   const payload: Record<string, unknown> = { name: input.name };
   if (input.description !== undefined) {
     payload.description = input.description;
+  }
+  if (input.imageUrl !== undefined) {
+    payload.image_url = input.imageUrl;
   }
   return payload;
 }
