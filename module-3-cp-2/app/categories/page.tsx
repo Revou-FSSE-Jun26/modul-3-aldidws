@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Card from "@/components/Card";
+import Image from "next/image";
 import { getCategories } from "@/lib/api";
 
 export const revalidate = 60;
@@ -27,24 +27,44 @@ export default async function CategoriesPage() {
               key={category.id}
               href={`/products?category=${encodeURIComponent(category.name)}`}
               aria-label={`View products in ${category.name}`}
-              className="rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-foreground/40"
+              className="group rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-foreground/40"
             >
-              <Card className="flex h-full flex-col gap-1">
-                <h2 className="text-base font-semibold">{category.name}</h2>
-                {category.description && (
-                  <p className="text-sm text-foreground/60">
-                    {category.description}
-                  </p>
-                )}
-                {typeof category.productCount === "number" && (
-                  <span className="mt-1 text-xs text-foreground/50">
-                    {category.productCount} product
+              <div className="flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                {/* Image */}
+                <div className="relative aspect-video w-full overflow-hidden bg-slate-100">
+                  {category.imageUrl ? (
+                    <Image
+                      src={category.imageUrl}
+                      alt={category.name}
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-sm text-slate-400">
+                      No image
+                    </div>
+                  )}
+                </div>
+
+                {/* Content */}
+                <div className="flex flex-1 flex-col gap-1 p-4">
+                  <h2 className="text-base font-semibold">{category.name}</h2>
+                  {category.description && (
+                    <p className="line-clamp-2 text-sm text-foreground/60">
+                      {category.description}
+                    </p>
+                  )}
+                  {typeof category.productCount === "number" && (
+                    <span className="mt-1 w-fit rounded-full bg-foreground/10 px-2.5 py-0.5 text-xs font-medium">
+                      {category.productCount} product{category.productCount !== 1 ? "s" : ""}
+                    </span>
+                  )}
+                  <span className="mt-auto pt-3 text-sm font-medium text-blue-600 transition group-hover:underline">
+                    View products &rarr;
                   </span>
-                )}
-                <span className="mt-2 text-sm font-medium text-foreground/70">
-                  View products &rarr;
-                </span>
-              </Card>
+                </div>
+              </div>
             </Link>
           ))}
         </div>

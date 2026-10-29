@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Card from "@/components/Card";
@@ -117,8 +117,14 @@ function validate(values: FormValues): FormErrors {
 
 export default function CheckoutPage() {
   const { items, totalItems, totalPrice, clear } = useCart();
-  const { token } = useAuth();
+  const { token, status } = useAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push(`/auth/login?redirect=${encodeURIComponent("/checkout")}`);
+    }
+  }, [status, router]);
 
   const [values, setValues] = useState<FormValues>(EMPTY_FORM);
   const [errors, setErrors] = useState<FormErrors>({});
