@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Card from "@/components/Card";
 import PasswordInput from "@/components/PasswordInput";
 import { AuthError, register } from "@/lib/auth";
+import { useAuth } from "@/lib/useAuth";
+
+const inputClass =
+  "w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm placeholder:text-slate-400 outline-none transition focus:border-[#17365d] focus:bg-white focus:ring-2 focus:ring-[#17365d]/10";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -15,6 +18,14 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const { status } = useAuth();
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace("/");
+    }
+  }, [status, router]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -56,88 +67,112 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="flex w-full flex-col gap-4">
-      <h1 className="text-xl font-bold">Create Account</h1>
+    <div>
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-black tracking-tight text-[#17365d]">
+          Create account
+        </h1>
+        <p className="mt-1.5 text-sm text-slate-500">
+          Register to start shopping for BMW parts.
+        </p>
+      </div>
 
-      <Card>
-        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1">
-            <label htmlFor="name" className="text-sm font-medium">
-              Name
-            </label>
-            <input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="rounded-md border border-black/15 bg-background px-3 py-2 text-sm outline-none focus:border-foreground/40 dark:border-white/20"
-            />
-          </div>
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="name" className="text-sm font-semibold text-slate-700">
+            Full Name
+          </label>
+          <input
+            id="name"
+            placeholder="Your full name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            autoComplete="name"
+            className={inputClass}
+          />
+        </div>
 
-          <div className="flex flex-col gap-1">
-            <label htmlFor="email" className="text-sm font-medium">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="rounded-md border border-black/15 bg-background px-3 py-2 text-sm outline-none focus:border-foreground/40 dark:border-white/20"
-            />
-          </div>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="email" className="text-sm font-semibold text-slate-700">
+            Email address
+          </label>
+          <input
+            id="email"
+            type="email"
+            placeholder="name@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+            className={inputClass}
+          />
+        </div>
 
-          <div className="flex flex-col gap-1">
-            <label htmlFor="password" className="text-sm font-medium">
-              Password
-            </label>
-            <PasswordInput
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={8}
-            />
-            <p className="text-xs text-foreground/50">At least 8 characters.</p>
-          </div>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="password" className="text-sm font-semibold text-slate-700">
+            Password
+          </label>
+          <PasswordInput
+            id="password"
+            placeholder="Min. 8 characters"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={8}
+            autoComplete="new-password"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 pr-12 text-sm placeholder:text-slate-400 outline-none transition focus:border-[#17365d] focus:bg-white focus:ring-2 focus:ring-[#17365d]/10"
+          />
+          <p className="text-xs text-slate-400">At least 8 characters.</p>
+        </div>
 
-          <div className="flex flex-col gap-1">
-            <label htmlFor="confirmPassword" className="text-sm font-medium">
-              Confirm Password
-            </label>
-            <PasswordInput
-              id="confirmPassword"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              minLength={8}
-            />
-            {confirmPassword.length > 0 && confirmPassword !== password && (
-              <p className="text-xs text-red-500">Passwords do not match.</p>
-            )}
-          </div>
-
-          {error && (
-            <p className="text-sm text-red-500" aria-live="polite">
-              {error}
-            </p>
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="confirmPassword" className="text-sm font-semibold text-slate-700">
+            Confirm Password
+          </label>
+          <PasswordInput
+            id="confirmPassword"
+            placeholder="Re-enter your password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            minLength={8}
+            autoComplete="new-password"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 pr-12 text-sm placeholder:text-slate-400 outline-none transition focus:border-[#17365d] focus:bg-white focus:ring-2 focus:ring-[#17365d]/10"
+          />
+          {confirmPassword.length > 0 && confirmPassword !== password && (
+            <p className="text-xs text-red-500">Passwords do not match.</p>
           )}
+        </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-md bg-foreground px-4 py-2 text-sm font-semibold text-background hover:opacity-90 disabled:opacity-50"
+        {error && (
+          <div
+            role="alert"
+            aria-live="polite"
+            className="flex items-start gap-2 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600"
           >
-            {loading ? "Processing..." : "Sign Up"}
-          </button>
-        </form>
-      </Card>
+            <span className="mt-0.5 shrink-0">⚠</span>
+            {error}
+          </div>
+        )}
 
-      <p className="text-center text-sm text-foreground/60">
+        <button
+          type="submit"
+          disabled={loading}
+          className="mt-1 w-full rounded-xl bg-[#17365d] py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#1e4a7a] disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {loading ? "Creating account…" : "Create Account"}
+        </button>
+      </form>
+
+      <p className="mt-6 text-center text-sm text-slate-500">
         Already have an account?{" "}
-        <Link href="/auth/login" className="font-medium hover:underline">
-          Login
+        <Link
+          href="/auth/login"
+          className="font-semibold text-[#17365d] hover:underline"
+        >
+          Sign in
         </Link>
       </p>
     </div>
