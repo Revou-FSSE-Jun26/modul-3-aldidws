@@ -19,6 +19,8 @@ export interface ProductCardProps {
   image_url?: string | null;
   is_featured?: boolean;
   showCartButton?: boolean;
+  /** Override the default /products/:id link (e.g. for dashboard use) */
+  detailHref?: string;
 }
 
 export default function ProductCard({
@@ -32,6 +34,7 @@ export default function ProductCard({
   image_url,
   is_featured,
   showCartButton = true,
+  detailHref,
 }: ProductCardProps) {
   const [quantity, setQuantity] = useState(1);
   const { addItem } = useCart();
@@ -42,7 +45,7 @@ export default function ProductCard({
   const isAuthenticated = mounted && status === "authenticated";
 
   const numericPrice = Number(price) || 0;
-  const productUrl = `/products/${id}`;
+  const productUrl = detailHref ?? `/products/${id}`;
   const outOfStock = stock <= 0;
 
   const formattedPrice = new Intl.NumberFormat("id-ID", {

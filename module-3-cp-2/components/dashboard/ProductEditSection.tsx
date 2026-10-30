@@ -13,11 +13,13 @@ export default function ProductEditSection({ product: initialProduct }: ProductE
   const [product, setProduct] = useState<Product>(initialProduct);
 
   return (
-    <section className="mt-6 flex flex-col border-t border-black/10 pt-6 dark:border-white/15">
+    <div className="flex flex-col gap-8">
       <EditProductForm product={product} onSubmit={setProduct} />
-      <div className="mt-16 border-t border-black/10 pt-10 dark:border-white/15">
+
+      {/* Delete */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <DeleteProductForm product={product} />
       </div>
-    </section>
+    </div>
   );
 }

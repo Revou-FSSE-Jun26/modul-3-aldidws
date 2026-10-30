@@ -40,7 +40,7 @@ export default async function ProductsPage({
           No matching products found.
         </p>
       ) : (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
           {filtered.map((product) => (
             <ProductCard
               key={product.id}
@@ -54,6 +54,7 @@ export default async function ProductsPage({
               image_url={product.imageUrl}
               is_featured={product.is_featured}
               showCartButton={false}
+              detailHref={`/dashboard/products/${product.id}`}
             />
           ))}
         </div>
