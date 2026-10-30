@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   images: {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
-    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    contentSecurityPolicy: "default-src 'self'; img-src 'self' https://ik.imagekit.io https:; script-src 'none'; sandbox;",
     remotePatterns: [
       {
         protocol: 'https',

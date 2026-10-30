@@ -71,9 +71,9 @@ export default function HeroSlider({ productCount }: HeroSliderProps) {
 
         {/* Text content */}
         <div className="absolute inset-0 flex flex-col justify-center px-6 sm:px-10">
-          <p className="text-xs font-bold uppercase tracking-widest text-blue-300">
-            Revo Otoshop
-          </p>
+          <span className="text-xl font-black tracking-tight text-white">
+              REVO <span className="text-amber-400">OTOSHOP</span>
+            </span>
           <h1 className="mt-1 text-2xl font-black text-white sm:text-3xl">
             All Products
           </h1>
