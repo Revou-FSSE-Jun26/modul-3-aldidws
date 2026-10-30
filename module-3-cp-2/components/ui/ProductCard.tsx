@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
-import { ShoppingCart, Eye } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 
 export interface ProductCardProps {
   id: number | string;
@@ -112,7 +112,7 @@ export default function ProductCard({
           </p>
         )}
 
-        {/* Name */}
+        {/* Name — full card tap on mobile */}
         <Link href={productUrl} className="group/name">
           <h3 className="line-clamp-2 text-[13px] font-semibold leading-snug text-slate-800 transition-colors group-hover/name:text-sky-700">
             {name}
@@ -120,40 +120,22 @@ export default function ProductCard({
         </Link>
 
         {/* Price + stock */}
-        <div className="mt-auto pt-2">
-          <p className="text-base font-extrabold text-slate-900 tracking-tight">
+        <Link href={productUrl} className="mt-auto block pt-2">
+          <p className="text-base font-extrabold tracking-tight text-slate-900">
             {formattedPrice}
           </p>
           <div className="mt-0.5 flex items-center gap-1.5">
-            <span
-              className={`inline-block h-1.5 w-1.5 rounded-full ${
-                outOfStock ? "bg-red-400" : "bg-emerald-500"
-              }`}
-            />
-            <span
-              className={`text-[11px] font-medium ${
-                outOfStock ? "text-red-500" : "text-emerald-600"
-              }`}
-            >
+            <span className={`inline-block h-1.5 w-1.5 rounded-full ${outOfStock ? "bg-red-400" : "bg-emerald-500"}`} />
+            <span className={`text-[11px] font-medium ${outOfStock ? "text-red-500" : "text-emerald-600"}`}>
               {outOfStock ? "Out of stock" : "In stock"}
             </span>
           </div>
-        </div>
+        </Link>
 
-        {/* Buttons */}
-        <div className="mt-3 space-y-2">
-          {/* Primary: View Product */}
-          <Link
-            href={productUrl}
-            className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-sky-600 text-[12px] font-semibold text-white transition hover:bg-sky-700 active:scale-95"
-          >
-            <Eye className="h-3.5 w-3.5" />
-            View Product
-          </Link>
-
-          {/* Secondary: Cart / Login */}
-          {showCartButton && (
-            isAuthenticated ? (
+        {/* Add to Cart — desktop only (md+), no View Product button needed */}
+        {showCartButton && (
+          <div className="mt-3 hidden md:block">
+            {isAuthenticated ? (
               <button
                 type="button"
                 onClick={handleAddToCart}
@@ -170,9 +152,9 @@ export default function ProductCard({
               >
                 Login to buy
               </Link>
-            )
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </div>
     </article>
   );
