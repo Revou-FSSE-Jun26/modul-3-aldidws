@@ -2,14 +2,18 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCategories, getCategory, getProducts } from "@/lib/api";
 import ProductCard from "@/components/ui/ProductCard";
-
-export const revalidate = 300;
+export const dynamic = "force-dynamic";
+export const dynamicParams = true;
 
 export async function generateStaticParams() {
-  const categories = await getCategories({ cache: "force-cache" });
-  return categories.map((category) => ({
-    categories_id: String(category.id),
-  }));
+  try {
+    const categories = await getCategories({ cache: "force-cache" });
+    return categories.map((category) => ({
+      categories_id: String(category.id),
+    }));
+  } catch {
+    return [];
+  }
 }
 
 export default async function CategoriesDetailPage({
@@ -18,10 +22,7 @@ export default async function CategoriesDetailPage({
   const { categories_id } = await params;
 
   const [category, allProducts] = await Promise.all([
-    getCategory(categories_id, {
-      revalidate: 300,
-      tags: ["categories", `category:${categories_id}`],
-    }),
+    getCategory(categories_id),
     getProducts(),
   ]);
 
