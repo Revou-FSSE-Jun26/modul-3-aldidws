@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getProducts } from "@/lib/api";
+import { getProducts, getCategories } from "@/lib/api";
 import ProductCard from "@/components/ui/ProductCard";
 import HeroSlider from "@/components/ui/HeroSlider";
 import type { Product } from "@/lib/types";
@@ -46,7 +46,14 @@ export default async function ProductsPage({
   const activeCategory =
     (Array.isArray(category) ? category[0] : category)?.trim() ?? "";
 
-  const products = await getProducts();
+  const [products, categories] = await Promise.all([
+    getProducts(),
+    getCategories(),
+  ]);
+
+  const categoryIdMap = new Map(
+    categories.map((c) => [c.name.trim(), c.id])
+  );
 
   const filtered = products.filter((product) => {
     const matchesQuery = query
@@ -106,12 +113,18 @@ export default async function ProductsPage({
                   <h2 className="text-lg font-bold tracking-tight text-slate-900">
                     {group.category}
                   </h2>
-                  <Link
-                    href={`/products?category=${encodeURIComponent(group.category)}`}
-                    className="shrink-0 text-sm font-semibold text-sky-600 hover:text-sky-700"
-                  >
-                    View all →
-                  </Link>
+                  {activeCategory !== group.category && (
+                    <Link
+                      href={
+                        categoryIdMap.has(group.category)
+                          ? `/categories/${categoryIdMap.get(group.category)}`
+                          : `/products?category=${encodeURIComponent(group.category)}`
+                      }
+                      className="shrink-0 text-sm font-semibold text-sky-600 hover:text-sky-700"
+                    >
+                      View all →
+                    </Link>
+                  )}
                 </div>
               </div>
               
