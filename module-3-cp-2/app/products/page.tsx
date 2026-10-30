@@ -6,12 +6,10 @@ import type { Product } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
-/**
- * Group products by category, preserving the backend's first-appearance
- * order so featured/popular products keep their natural ordering. Products
- * without a category land in an "Uncategorized" group that is always rendered
- * last so named categories come first.
- */
+function categoryOf(product: Product): string {
+  return product.category?.trim() || "Uncategorized";
+}
+
 function groupProductsByCategory(
   products: Product[],
 ): { category: string; products: Product[] }[] {
@@ -19,7 +17,7 @@ function groupProductsByCategory(
   const buckets = new Map<string, Product[]>();
 
   for (const product of products) {
-    const category = product.category?.trim() || "Uncategorized";
+    const category = categoryOf(product);
     if (!buckets.has(category)) {
       buckets.set(category, []);
       order.push(category);
@@ -57,7 +55,7 @@ export default async function ProductsPage({
       : true;
 
     const matchesCategory = activeCategory
-      ? product.category === activeCategory
+      ? categoryOf(product) === activeCategory
       : true;
 
     return matchesQuery && matchesCategory;
@@ -74,11 +72,18 @@ export default async function ProductsPage({
       {/* ── Catalog ── */}
       <div className="mt-8 flex flex-col gap-4">
         {(query || activeCategory) && (
-          <p className="text-sm font-medium text-foreground/60">
-            Showing {filtered.length} result{filtered.length === 1 ? "" : "s"}
-            {query ? ` for "${query}"` : ""}
-            {activeCategory ? ` in ${activeCategory}` : ""}
-          </p>
+          <div
+            style={{
+              width: "100vw",
+              marginLeft: "calc(-50vw + 50%)",
+            }}
+          >
+            <p className="px-4 sm:px-6 text-sm font-medium text-foreground/60">
+              Showing {filtered.length} result{filtered.length === 1 ? "" : "s"}
+              {query ? ` for "${query}"` : ""}
+              {activeCategory ? ` in ${activeCategory}` : ""}
+            </p>
+          </div>
         )}
 
         {grouped.length === 0 ? (
@@ -87,10 +92,6 @@ export default async function ProductsPage({
           </p>
         ) : (
           grouped.map((group) => (
-            // Full-bleed each category section (header + scroll row together)
-            // so the section header aligns with the first card at the same
-            // px-4 sm:px-6 inset on every breakpoint, and the row reaches the
-            // viewport edges with no side whitespace.
             <section
               key={group.category}
               className="mt-8"
@@ -113,29 +114,46 @@ export default async function ProductsPage({
                   </Link>
                 </div>
               </div>
+              
+              {/* Horizontal scrolling row of cards */}
+              <div className="relative">
+                <div
+                  className="snap-x snap-mandatory overflow-x-auto pb-3"
+                  role="region"
+                  aria-label={`${group.category} products`}
+                >
+                  <ol className="flex gap-4 px-4 sm:px-6">
+                    {group.products.map((product) => (
+                      <li
+                        key={product.id}
+                        className="w-52 shrink-0 snap-start"
+                      >
+                        <ProductCard
+                          id={product.id}
+                          name={product.name}
+                          price={product.price}
+                          stock={product.stock}
+                          description={product.description}
+                          brand={product.brand}
+                          sku={product.sku}
+                          image_url={product.imageUrl}
+                          is_featured={product.is_featured}
+                          imageSizes="208px"
+                        />
+                      </li>
+                    ))}
+                  </ol>
+                </div>
 
-              {/* Horizontal scroll row of fixed-width cards */}
-              <div className="snap-x snap-mandatory overflow-x-auto pb-3">
-                <ol className="flex gap-4 px-4 sm:px-6">
-                  {group.products.map((product) => (
-                    <li
-                      key={product.id}
-                      className="w-52 shrink-0 snap-start"
-                    >
-                      <ProductCard
-                        id={product.id}
-                        name={product.name}
-                        price={product.price}
-                        stock={product.stock}
-                        description={product.description}
-                        brand={product.brand}
-                        sku={product.sku}
-                        image_url={product.imageUrl}
-                        is_featured={product.is_featured}
-                      />
-                    </li>
-                  ))}
-                </ol>
+                {/* Right-edge fade hints */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute bottom-0 right-0 top-0 z-10 w-6 sm:w-7"
+                  style={{
+                    background:
+                      "linear-gradient(to left, var(--background, #ffffff), transparent)",
+                  }}
+                />
               </div>
             </section>
           ))

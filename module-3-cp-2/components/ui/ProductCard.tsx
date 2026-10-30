@@ -19,8 +19,8 @@ export interface ProductCardProps {
   image_url?: string | null;
   is_featured?: boolean;
   showCartButton?: boolean;
-  /** Override the default /products/:id link (e.g. for dashboard use) */
   detailHref?: string;
+  imageSizes?: string;
 }
 
 export default function ProductCard({
@@ -35,6 +35,7 @@ export default function ProductCard({
   is_featured,
   showCartButton = true,
   detailHref,
+  imageSizes = "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw",
 }: ProductCardProps) {
   const [quantity, setQuantity] = useState(1);
   const { addItem } = useCart();
@@ -77,7 +78,7 @@ export default function ProductCard({
             src={image_url}
             alt={name}
             fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            sizes={imageSizes}
             className="object-contain p-4 transition-transform duration-500 group-hover:scale-[1.07]"
           />
         ) : (
