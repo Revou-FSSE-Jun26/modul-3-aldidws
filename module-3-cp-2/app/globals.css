@@ -11,6 +11,12 @@
 
 html {
   scroll-behavior: smooth;
+  /* Clip horizontal overflow at the viewport so full-bleed (100vw) sections
+     on /products, the hero, and the homepage can never trigger a horizontal
+     page scroll. Placed on `html` (not `body`) so it clips at the viewport
+     without creating a scroll container that would interfere with the sticky
+     header or fixed mobile nav. */
+  overflow-x: clip;
 }
 
 html,
