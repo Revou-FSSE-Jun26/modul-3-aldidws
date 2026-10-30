@@ -53,6 +53,7 @@ export default function Header() {
 
   // Ref for click-outside detection (#1)
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
+  const categoryMenuRef = useRef<HTMLDivElement>(null);
 
   // Load categories
   useEffect(() => {
@@ -78,14 +79,14 @@ export default function Header() {
     setCategoriesOpen(false);
   }, [pathname]);
 
-  // #1 — Close dropdown when clicking outside
+  // #1 — Close dropdown when clicking outside both the trigger and the panel
   useEffect(() => {
     if (!categoriesOpen) return;
     function handleClickOutside(e: MouseEvent) {
-      if (
-        categoryDropdownRef.current &&
-        !categoryDropdownRef.current.contains(e.target as Node)
-      ) {
+      const target = e.target as Node;
+      const insideTrigger = categoryDropdownRef.current?.contains(target);
+      const insidePanel = categoryMenuRef.current?.contains(target);
+      if (!insideTrigger && !insidePanel) {
         setCategoriesOpen(false);
       }
     }
@@ -135,7 +136,7 @@ export default function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white text-slate-800 shadow-sm">
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white text-slate-800 shadow-sm relative">
       {/* Sync search query from URL params without blocking the header render */}
       <Suspense fallback={null}>
         <SearchParamsSync onParams={setSearchQuery} />
@@ -156,7 +157,7 @@ export default function Header() {
             </span>
           </Link>
 
-          {/* Category dropdown — ref attached for click-outside (#1) */}
+          {/* Category mega-menu trigger — ref attached for click-outside (#1) */}
           <div
             ref={categoryDropdownRef}
             className="relative hidden shrink-0 sm:block"
@@ -175,43 +176,6 @@ export default function Header() {
                 className={`transition-transform ${categoriesOpen ? "rotate-180" : ""}`}
               />
             </button>
-
-            {categoriesOpen && (
-              <div
-                id="header-category-menu"
-                role="menu"
-                className="absolute left-0 top-full mt-2 max-h-96 w-64 overflow-y-auto rounded-xl border border-slate-200 bg-white py-2 shadow-xl"
-              >
-                <Link
-                  href="/categories"
-                  role="menuitem"
-                  className="block border-b border-slate-100 px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 hover:text-blue-700"
-                >
-                  All Categories
-                </Link>
-
-                {categoriesError ? (
-                  <p className="px-4 py-3 text-sm text-red-600" role="alert">
-                    Unable to load categories. Please try again later.
-                  </p>
-                ) : categories.length === 0 ? (
-                  <p className="px-4 py-3 text-sm text-slate-500">
-                    Loading categories…
-                  </p>
-                ) : (
-                  categories.map((category) => (
-                    <Link
-                      key={category.id}
-                      href={getCategoryHref(category.name)}
-                      role="menuitem"
-                      className="block px-4 py-3 text-sm text-slate-600 transition hover:bg-blue-50 hover:text-blue-700"
-                    >
-                      {category.name}
-                    </Link>
-                  ))
-                )}
-              </div>
-            )}
           </div>
 
           {/* Search */}
@@ -300,12 +264,12 @@ export default function Header() {
             )}
           </div>
 
-          {/* Cart (desktop) — hidden for admin */}
+          {/* Cart (desktop only) — hidden for admin, hidden on mobile (mobile nav has its own cart link) */}
           {!isAdmin && (
             <Link
               href="/cart"
               aria-label={`Shopping cart, ${totalItems} item${totalItems !== 1 ? "s" : ""}`}
-              className="relative flex shrink-0 items-center justify-center rounded-lg border border-slate-200 p-3 text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+              className="relative hidden sm:flex shrink-0 items-center justify-center rounded-lg border border-slate-200 p-3 text-slate-700 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
             >
               <ShoppingCart size={21} />
               {totalItems > 0 && (
@@ -320,15 +284,11 @@ export default function Header() {
           )}
         </div>
 
-        {/* Mobile nav */}
+        {/* Desktop nav secondary row (sm only, not lg — lg uses inline nav above) */}
         <nav
-          aria-label="Mobile navigation"
-          className="flex items-center gap-5 overflow-x-auto border-t border-slate-100 py-3 lg:hidden"
+          aria-label="Tablet navigation"
+          className="hidden items-center gap-5 overflow-x-auto border-t border-slate-100 py-3 sm:flex lg:hidden"
         >
-          <Link href="/categories" className={linkClass("/categories")}>
-            Categories
-          </Link>
-
           {NAV_LINKS.map((link) => (
             <Link
               key={link.href}
@@ -340,40 +300,16 @@ export default function Header() {
             </Link>
           ))}
 
-          {/* Cart link on mobile — hidden for admin */}
-          {!isAdmin && (
-            <Link
-              href="/cart"
-              aria-label={`Cart (${totalItems})`}
-              className="relative flex items-center gap-1.5 whitespace-nowrap text-sm font-medium text-slate-600 transition hover:text-blue-700"
-            >
-              <ShoppingCart size={15} />
-              <span>Cart</span>
-              {totalItems > 0 && (
-                <span
-                  aria-hidden="true"
-                  className="flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white"
-                >
-                  {totalItems}
-                </span>
-              )}
-            </Link>
-          )}
-
           {isAuthenticated ? (
             <>
               <Link href="/profile" className={linkClass("/profile")}>
                 My Account
               </Link>
               {isAdmin && (
-                <Link
-                  href="/dashboard"
-                  className={linkClass("/dashboard")}
-                >
+                <Link href="/dashboard" className={linkClass("/dashboard")}>
                   Dashboard
                 </Link>
               )}
-              {/* #3 — logout redirects on mobile too */}
               <button
                 type="button"
                 onClick={handleLogout}
@@ -390,6 +326,54 @@ export default function Header() {
         </nav>
 
       </div>
+
+      {/* ── Mega menu — full-width, absolutely below header, sm+ only ── */}
+      {categoriesOpen && (
+        <div
+          ref={categoryMenuRef}
+          id="header-category-menu"
+          role="menu"
+          className="absolute left-0 right-0 top-full z-50 hidden border-t border-slate-200 bg-white shadow-2xl sm:block"
+        >
+          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+            {categoriesError ? (
+              <p className="text-sm text-red-600" role="alert">
+                Unable to load categories. Please try again later.
+              </p>
+            ) : categories.length === 0 ? (
+              /* Skeleton */
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-5">
+                {[...Array(10)].map((_, i) => (
+                  <div key={i} className="h-9 animate-pulse rounded-lg bg-slate-100" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5">
+                {categories.map((category) => (
+                  <Link
+                    key={category.id}
+                    href={getCategoryHref(category.name)}
+                    role="menuitem"
+                    className="flex items-center rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+                  >
+                    {category.name}
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="mt-4 border-t border-slate-100 pt-4">
+              <Link
+                href="/categories"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-700 transition hover:text-blue-800"
+              >
+                View all categories →
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

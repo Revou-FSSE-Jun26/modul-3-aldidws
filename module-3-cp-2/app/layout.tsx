@@ -8,6 +8,7 @@ import { Toaster } from "react-hot-toast";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { ConditionalHeader, ConditionalFooter, ConditionalMain } from "@/components/layout/AppShell";
+import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import { CartProvider } from "@/context/CartContext";
 
 const poppins = Poppins({
@@ -65,6 +66,11 @@ export default function RootLayout({
           {/* Footer lives outside Suspense for the same reason */}
           <ConditionalFooter>
             <Footer />
+          </ConditionalFooter>
+
+          {/* Mobile bottom navigation — only on public pages, hidden on sm+ */}
+          <ConditionalFooter>
+            <MobileBottomNav />
           </ConditionalFooter>
         </CartProvider>
       </body>
