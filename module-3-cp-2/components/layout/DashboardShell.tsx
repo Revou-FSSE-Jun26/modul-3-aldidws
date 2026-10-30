@@ -10,6 +10,7 @@ import {
   ClipboardList,
   Store,
   LogOut,
+  UserRound,
 } from "lucide-react";
 import { useEffect } from "react";
 
@@ -156,16 +157,17 @@ export default function DashboardShell({ children }: { children: React.ReactNode
           );
         })}
 
-        {/* Logout */}
-        <button
-          type="button"
-          onClick={handleLogout}
-          className="flex flex-col items-center gap-0.5 text-[10px] font-medium text-slate-500 transition hover:text-red-600"
-          aria-label="Logout"
+        {/* Profile */}
+        <Link
+          href="/profile"
+          aria-current={isActive("/profile", false) ? "page" : undefined}
+          className={`flex flex-col items-center gap-0.5 text-[10px] font-medium transition-colors ${
+            isActive("/profile", false) ? "text-blue-700" : "text-slate-500"
+          }`}
         >
-          <LogOut size={22} />
-          <span>Logout</span>
-        </button>
+          <UserRound size={22} />
+          <span>Profile</span>
+        </Link>
       </nav>
 
       {/* ── Main content ──────────────────────────────────────── */}

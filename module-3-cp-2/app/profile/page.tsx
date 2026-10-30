@@ -4,10 +4,10 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { LayoutDashboard, Package, Tag, ClipboardList, ShoppingCart, Store, ArrowRight } from "lucide-react";
+import { LayoutDashboard, Package, Tag, ClipboardList, ShoppingCart, Store, ArrowRight, LogOut } from "lucide-react";
 
 export default function ProfilePage() {
-  const { status, user, isAdmin: isAdminRaw } = useAuth(true);
+  const { status, user, logout, isAdmin: isAdminRaw } = useAuth(true);
   const router = useRouter();
 
   useEffect(() => {
@@ -15,6 +15,11 @@ export default function ProfilePage() {
       router.replace("/auth/login");
     }
   }, [status, router]);
+
+  function handleLogout() {
+    logout();
+    router.replace("/auth/login");
+  }
 
   if (status === "loading" || status === "unauthenticated" || !user) {
     return (
@@ -81,13 +86,15 @@ export default function ProfilePage() {
                   <LayoutDashboard size={15} className="text-slate-400" />
                   Dashboard
                 </Link>
-                <Link
-                  href="/"
-                  className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm text-slate-600 transition hover:bg-slate-50 hover:text-blue-700"
+                
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="flex w-full items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium text-red-500 transition hover:bg-red-50 hover:text-red-600"
                 >
-                  <Store size={15} className="text-slate-400" />
-                  View Store
-                </Link>
+                  <LogOut size={15} className="shrink-0 text-red-400" />
+                  Sign Out
+                </button>
               </nav>
             </aside>
 
@@ -186,26 +193,17 @@ export default function ProfilePage() {
               >
                 My Profile
               </Link>
-              <Link
-                href="/products"
-                className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm text-slate-600 transition hover:bg-slate-50 hover:text-blue-700"
+              
+              <div className="my-1 border-t border-slate-100" />
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex w-full items-center gap-3 rounded-lg px-4 py-3 font-[inherit] text-sm font-semibold text-red-500 transition hover:bg-red-50 hover:text-red-600"
               >
-                Browse Products
-              </Link>
-              <Link
-                href="/cart"
-                className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm text-slate-600 transition hover:bg-slate-50 hover:text-blue-700"
-              >
-                <ShoppingCart size={15} className="text-slate-400" />
-                Shopping Cart
-              </Link>
-              <Link
-                href="/"
-                className="flex items-center gap-3 rounded-lg px-4 py-3 text-sm text-slate-600 transition hover:bg-slate-50 hover:text-blue-700"
-              >
-                <Store size={15} className="text-slate-400" />
-                Back to Home
-              </Link>
+                <LogOut size={15} className="shrink-0 text-red-400" />
+                Sign Out
+              </button>
             </nav>
           </aside>
 
