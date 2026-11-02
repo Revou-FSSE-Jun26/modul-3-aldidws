@@ -145,17 +145,60 @@ function mapCategory(raw: RawCategory): Category {
   };
 }
 
+export interface ProductFilters {
+  search?: string;
+  category?: string;
+}
+
 export async function getProducts(
+  filters?: ProductFilters,
   cacheOptions?: CacheOptions,
 ): Promise<Product[]> {
+  const search = filters?.search?.trim() ?? "";
+  const category = filters?.category?.trim() ?? "";
+
+  const params = new URLSearchParams();
+  if (search) {
+    params.set("q", search);
+  }
+  if (category) {
+    try {
+      const categories = await getCategories(cacheOptions);
+      const match = categories.find(
+        (c) => c.name.trim().toLowerCase() === category.toLowerCase(),
+      );
+      if (match) {
+        params.set("category_id", String(match.id));
+      }
+    } catch {
+    }
+  }
+
+  const queryString = params.toString();
   const data = await apiFetch<{ products: RawProduct[] }>(
-    "/products",
+    `/products${queryString ? `?${queryString}` : ""}`,
     undefined,
     cacheOptions,
   );
-  return data.products
-    .filter((p) => p.is_active !== false)
-    .map(mapProduct);
+
+  return (
+    data.products
+      .filter((p) => p.is_active !== false)
+      .map(mapProduct)
+      .filter((product) => {
+        const matchesSearch = search
+          ? product.name.toLowerCase().includes(search.toLowerCase()) ||
+            (product.description ?? "")
+              .toLowerCase()
+              .includes(search.toLowerCase())
+          : true;
+        const matchesCategory = category
+          ? (product.category?.trim() ?? "").toLowerCase() ===
+            category.toLowerCase()
+          : true;
+        return matchesSearch && matchesCategory;
+      })
+  );
 }
 
 export async function getProduct(

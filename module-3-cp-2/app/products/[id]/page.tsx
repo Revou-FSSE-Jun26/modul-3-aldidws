@@ -10,7 +10,7 @@ export const revalidate = 120;
 
 export async function generateStaticParams() {
 try {
-const products = await getProducts({ cache: "force-cache" });
+const products = await getProducts(undefined, { cache: "force-cache" });
 return products.map((product) => ({ id: String(product.id) }));
 } catch {
 return [];
