@@ -1,7 +1,7 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Image from "next/image";
+import HeroSlider from "@/components/ui/HeroSlider";
 import { VEHICLE_DATA, CAR_BRANDS } from "@/lib/vehicle-data";
 import {
   productMatchesVehicle,
@@ -184,49 +184,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-white text-slate-800">
 
       {/* ── HERO ── */}
-      <section
-        className="relative -mt-8 mb-0 overflow-hidden"
-        style={{ width: "100vw", marginLeft: "calc(-50vw + 50%)" }}
-      >
-        <div className="relative h-[240px] w-full sm:h-[380px] lg:h-[500px]">
-          <Image
-            src="https://ik.imagekit.io/3xk2xnjekw/FoS_18_JoaoFilipe_1697.webp"
-            alt="BMW M4 Competition on track — performance automotive parts"
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover object-center"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#17365d]/90 via-[#17365d]/60 to-transparent" />
-
-          <div className="absolute inset-0 flex flex-col justify-center px-5 sm:px-10 lg:px-16">
-            <span className="mb-2 w-fit rounded-full bg-blue-400/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-blue-200 backdrop-blur-sm sm:mb-3 sm:px-3 sm:py-1 sm:text-xs">
-              Premium Auto Parts
-            </span>
-            <h1 className="max-w-xs text-2xl font-black leading-tight tracking-tight text-white sm:max-w-xl sm:text-4xl lg:text-5xl">
-              Find the Right Parts{" "}
-              <span className="text-amber-400">for Your BMW</span>
-            </h1>
-            <p className="mt-2 max-w-xs text-xs leading-5 text-slate-300 sm:mt-3 sm:max-w-md sm:text-sm sm:leading-6">
-              OEM-quality components, performance upgrades, and expert fitment guidance.
-            </p>
-            <div className="mt-4 flex gap-2 sm:mt-5 sm:gap-3">
-              <button
-                onClick={() => document.getElementById("products")?.scrollIntoView({ behavior: "smooth" })}
-                className="rounded-full bg-amber-400 px-4 py-2 text-xs font-bold text-slate-900 transition hover:bg-amber-300 sm:px-6 sm:py-2.5 sm:text-sm"
-              >
-                Shop Now
-              </button>
-              <a
-                href="/about"
-                className="rounded-full border border-white/30 px-4 py-2 text-xs font-bold text-white backdrop-blur-sm transition hover:bg-white/10 sm:px-6 sm:py-2.5 sm:text-sm"
-              >
-                About Us
-              </a>
-            </div>
-          </div>
-        </div>
-      </section>
+      <HeroSlider productCount={products.length} />
 
       {/* BENEFITS */}
       <section
