@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState, type FormEvent } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import {
   Search,
   ShoppingCart,
@@ -22,15 +29,16 @@ const NAV_LINKS = [
   { href: "/about", label: "About Us" },
 ] as const;
 
-/**
- * Tiny wrapper that reads useSearchParams() (needs Suspense) and passes
- * the current "q" value to a callback so the parent can seed the search field.
- */
-function SearchParamsSync({ onParams }: { onParams: (q: string) => void }) {
+function SearchParamsSync({
+  onParams,
+}: {
+  onParams: (q: string) => void;
+}) {
   const searchParams = useSearchParams();
+  const q = searchParams.get("q") ?? "";
   useEffect(() => {
-    onParams(searchParams.get("q") ?? "");
-  }, [searchParams, onParams]);
+    onParams(q);
+  }, [q, onParams]);
   return null;
 }
 
@@ -47,6 +55,9 @@ export default function Header() {
   const isAuthenticated = mounted && status === "authenticated";
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [urlQuery, setUrlQuery] = useState("");
+  const userTypedRef = useRef(false);
+
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [categoriesError, setCategoriesError] = useState(false);
@@ -104,6 +115,34 @@ export default function Header() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [categoriesOpen]);
 
+  // Seed the search field from the URL "q" without marking it as user input,
+  // so deep-links / our own debounced navigation never trigger a nav loop.
+  const handleUrlQuery = useCallback((q: string) => {
+    setUrlQuery(q);
+    setSearchQuery((current) => (current === q ? current : q));
+  }, []);
+
+  // #R8 — Debounced live search. While the user types, update the /products
+  // "q" param ~300ms after the last keystroke, without a submit. Guards:
+  //  - only navigate on user-driven changes (userTypedRef), never on seeding;
+  //  - skip when the debounced value already equals the current URL "q".
+  useEffect(() => {
+    if (!userTypedRef.current) return;
+
+    const query = searchQuery.trim();
+    const timer = setTimeout(() => {
+      if (query === urlQuery.trim()) return;
+
+      if (!query) {
+        router.replace("/products");
+        return;
+      }
+      router.replace(`/products?q=${encodeURIComponent(query)}`);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, urlQuery, router]);
+
   function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const query = searchQuery.trim();
@@ -117,7 +156,7 @@ export default function Header() {
   // #3 — Logout with redirect
   function handleLogout() {
     logout();
-    router.replace("/auth/login");
+    router.replace("/login");
   }
 
   function getCategoryHref(categoryName: string) {
@@ -139,7 +178,7 @@ export default function Header() {
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white text-slate-800 shadow-sm relative">
       {/* Sync search query from URL params without blocking the header render */}
       <Suspense fallback={null}>
-        <SearchParamsSync onParams={setSearchQuery} />
+        <SearchParamsSync onParams={handleUrlQuery} />
       </Suspense>
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6">
@@ -187,7 +226,10 @@ export default function Header() {
             <input
               type="search"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                userTypedRef.current = true;
+                setSearchQuery(e.target.value);
+              }}
               placeholder="Search products, brands, or categories..."
               aria-label="Search products"
               className="min-w-0 flex-1 bg-transparent px-3 py-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 sm:px-4"
@@ -255,7 +297,7 @@ export default function Header() {
               </div>
             ) : (
               <Link
-                href="/auth/login"
+                href="/login"
                 className="flex items-center gap-2 whitespace-nowrap text-sm font-semibold text-slate-700 transition hover:text-blue-700"
               >
                 <UserRound size={19} />
@@ -319,7 +361,7 @@ export default function Header() {
               </button>
             </>
           ) : (
-            <Link href="/auth/login" className={linkClass("/auth/login")}>
+            <Link href="/login" className={linkClass("/login")}>
               Login / Register
             </Link>
           )}
