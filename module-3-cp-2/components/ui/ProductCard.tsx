@@ -132,22 +132,49 @@ export default function ProductCard({
           </div>
         </Link>
 
-        {/* Add to Cart — desktop only (md+), no View Product button needed */}
+        {/* Add to Cart — visible on all viewports */}
         {showCartButton && (
-          <div className="mt-3 hidden md:block">
+          <div className="mt-3">
             {isAuthenticated ? (
-              <button
-                type="button"
-                onClick={handleAddToCart}
-                disabled={outOfStock}
-                className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 text-[12px] font-semibold text-slate-700 transition hover:bg-slate-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 active:scale-95"
-              >
-                <ShoppingCart className="h-3.5 w-3.5" />
-                {outOfStock ? "Out of Stock" : "Add to Cart"}
-              </button>
+              <div className="flex flex-col gap-2">
+                {!outOfStock && (
+                  <div className="flex items-center justify-center gap-2">
+                    <button
+                      type="button"
+                      aria-label="Decrease quantity"
+                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                      disabled={quantity <= 1}
+                      className="flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-sm font-bold text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-40 active:scale-95"
+                    >
+                      −
+                    </button>
+                    <span className="min-w-[2ch] text-center text-[13px] font-semibold text-slate-800">
+                      {quantity}
+                    </span>
+                    <button
+                      type="button"
+                      aria-label="Increase quantity"
+                      onClick={() => setQuantity((q) => Math.min(stock, Math.max(1, q + 1)))}
+                      disabled={quantity >= stock}
+                      className="flex h-7 w-7 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-sm font-bold text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-40 active:scale-95"
+                    >
+                      +
+                    </button>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  disabled={outOfStock}
+                  className="flex h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 text-[12px] font-semibold text-slate-700 transition hover:bg-slate-800 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 active:scale-95"
+                >
+                  <ShoppingCart className="h-3.5 w-3.5" />
+                  {outOfStock ? "Out of Stock" : "Add to Cart"}
+                </button>
+              </div>
             ) : (
               <Link
-                href="/auth/login"
+                href="/login"
                 className="flex h-8 w-full items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-[12px] font-semibold text-slate-600 transition hover:bg-slate-100 active:scale-95"
               >
                 Login to buy
