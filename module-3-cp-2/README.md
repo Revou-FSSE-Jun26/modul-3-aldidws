@@ -1,5 +1,7 @@
 # RevoShop
 
+**Live demo:** https://revo-otoshop.vercel.app
+
 A [Next.js](https://nextjs.org) storefront (App Router) for an automotive parts shop. Product, category, and order data is served by an external REST API, and authentication (register / login / profile) is handled by the same backend. A client-side shopping cart lets users collect items before checking out, and an admin dashboard provides CRUD management for products, categories, and orders.
 
 ## Overview
@@ -240,6 +242,8 @@ lib/
 
 ## Deploy on Vercel
 
-The easiest way to deploy a Next.js app is the [Vercel Platform](https://vercel.com/new). Remember to set `NEXT_PUBLIC_API_BASE_URL` and `NEXT_PUBLIC_AUTH_BASE_URL` in the project's environment variables.
+The app is deployed on Vercel and live at **[https://revo-otoshop.vercel.app](https://revo-otoshop.vercel.app)**.
+
+It is deployed via the [Vercel Platform](https://vercel.com/new) Next.js integration. Remember to set `NEXT_PUBLIC_API_BASE_URL` and `NEXT_PUBLIC_AUTH_BASE_URL` in the project's environment variables.
 
 See the [Next.js deployment docs](https://nextjs.org/docs/app/building-your-application/deploying) for details.
