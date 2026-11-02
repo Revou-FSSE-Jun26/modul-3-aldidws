@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import { getProducts } from "@/lib/api";
 import ProductCard from "@/components/ui/ProductCard";
 import AddProductForm from "@/components/dashboard/AddProductForm";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = { title: "Products" };
 
 export default async function ProductsPage({
   searchParams,

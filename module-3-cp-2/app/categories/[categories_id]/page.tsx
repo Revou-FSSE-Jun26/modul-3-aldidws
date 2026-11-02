@@ -1,9 +1,18 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCategories, getCategory, getProducts } from "@/lib/api";
 import ProductCard from "@/components/ui/ProductCard";
 export const dynamic = "force-dynamic";
 export const dynamicParams = true;
+
+export async function generateMetadata({
+  params,
+}: PageProps<"/categories/[categories_id]">): Promise<Metadata> {
+  const { categories_id } = await params;
+  const category = await getCategory(categories_id);
+  return { title: category?.name ?? "Category" };
+}
 
 export async function generateStaticParams() {
   try {
