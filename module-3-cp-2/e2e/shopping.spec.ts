@@ -40,6 +40,6 @@ test.describe('Shopping Flow', () => {
 
   test('cart page requires auth', async ({ page }) => {
     await page.goto('/cart');
-    await expect(page).toHaveURL(/\/auth\/login/, { timeout: 10000 });
+    await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
   });
 });

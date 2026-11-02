@@ -4,7 +4,7 @@ const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@example.com';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'adminpassword';
 
 async function loginAsAdmin(page: import('@playwright/test').Page) {
-  await page.goto('/auth/login');
+  await page.goto('/login');
   await page.fill('#email', ADMIN_EMAIL);
   await page.fill('#password', ADMIN_PASSWORD);
   await page.click('button[type="submit"]');
@@ -14,7 +14,7 @@ async function loginAsAdmin(page: import('@playwright/test').Page) {
 test.describe('Admin Dashboard', () => {
   test('unauthenticated user is redirected from /dashboard to login', async ({ page }) => {
     await page.goto('/dashboard');
-    await expect(page).toHaveURL(/\/auth\/login/, { timeout: 10000 });
+    await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
   });
 
   test.describe('when logged in as admin', () => {
