@@ -30,7 +30,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
 
   function handleLogout() {
     logout();
-    router.replace("/auth/login");
+    router.replace("/login");
   }
 
   function isActive(href: string, exact: boolean) {

@@ -51,7 +51,7 @@ export default function MobileBottomNav() {
 
   function handleLogout() {
     logout();
-    router.replace("/auth/login");
+    router.replace("/login");
   }
 
   function isActive(href: string) {
@@ -132,7 +132,7 @@ export default function MobileBottomNav() {
             <span>Account</span>
           </Link>
         ) : (
-          <Link href="/auth/login" className={itemClass(isActive("/auth/login"))}>
+          <Link href="/login" className={itemClass(isActive("/login"))}>
             <UserRound size={iconSize} />
             <span>Login</span>
           </Link>

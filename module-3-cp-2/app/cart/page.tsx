@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -10,12 +11,18 @@ import { useAuth } from "@/hooks/useAuth";
 export default function CartPage() {
   const { items, totalItems, totalPrice, updateQuantity, removeItem, clear } =
     useCart();
-  const { status } = useAuth();
+  const { status } = useAuth(true);
   const router = useRouter();
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/login");
+    }
+  }, [status, router]);
 
   function handleCheckout() {
     if (status !== "authenticated") {
-      router.push(`/auth/login?redirect=${encodeURIComponent("/checkout")}`);
+      router.push(`/login?redirect=${encodeURIComponent("/checkout")}`);
       return;
     }
     router.push("/checkout");

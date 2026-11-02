@@ -17,7 +17,7 @@ export default function OrdersPage() {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.replace("/auth/login");
+      router.replace("/login");
     }
   }, [status, router]);
 

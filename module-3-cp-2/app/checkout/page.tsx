@@ -122,7 +122,7 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push(`/auth/login?redirect=${encodeURIComponent("/checkout")}`);
+      router.push(`/login?redirect=${encodeURIComponent("/checkout")}`);
     }
   }, [status, router]);
 
@@ -158,7 +158,7 @@ export default function CheckoutPage() {
     }
 
     if (!token) {
-      router.push(`/auth/login?redirect=${encodeURIComponent("/checkout")}`);
+      router.push(`/login?redirect=${encodeURIComponent("/checkout")}`);
       return;
     }
 

@@ -12,13 +12,13 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.replace("/auth/login");
+      router.replace("/login");
     }
   }, [status, router]);
 
   function handleLogout() {
     logout();
-    router.replace("/auth/login");
+    router.replace("/login");
   }
 
   if (status === "loading" || status === "unauthenticated" || !user) {

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-export default function AuthLayout({ children }: LayoutProps<"/auth">) {
+export default function AuthLayout({ children }: LayoutProps<"/">) {
   return (
     <div className="flex min-h-screen">
 
